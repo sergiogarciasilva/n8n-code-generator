@@ -8407,6 +8407,275 @@ Thanks for your feedback! Help us improve this page by submitting an issue or a 
 
 Back to top
 
+# integrations/builtin/core-nodes/n8n-nodes-langchain.mcptrigger/index.md
+
+# MCP Server Trigger node#
+
+The MCP Server Trigger node enables n8n workflows to function as Model Context Protocol (MCP) servers. This allows external applications like Claude Desktop, AI agents, and other MCP clients to interact with your n8n workflows through standardized MCP interfaces.
+
+Unlike conventional trigger nodes that respond to events and pass output to connected nodes, the MCP Server Trigger node only connects to and executes tool nodes. Clients can list available tools and call individual tools to perform work.
+
+## Node parameters#
+
+### Path#
+
+Specifies the URL path where the MCP server will listen for incoming requests. By default, contains a randomly generated path to avoid conflicts with other MCP Server Trigger nodes.
+
+### Authentication#
+
+Choose how to secure access to your MCP server:
+
+  * **None** (default): No authentication required. Warning: If your URL endpoint is exposed, unauthorized parties can access your MCP server.
+  * **Bearer Auth**: Enable Bearer authentication to allow only clients with the correct token to communicate with your MCP server.
+
+## MCP URLs#
+
+The MCP Server Trigger node has two URLs:
+
+  * **Test URL**: Registered when you select "Listen for Test Event" or "Execute workflow" while the workflow isn't active. Data displays in the workflow.
+  * **Production URL**: Registered when you publish the workflow. Data doesn't display in the workflow.
+
+## Transport protocols#
+
+The node supports:
+
+  * **Server-Sent Events (SSE)**: A long-lived transport built on top of HTTP
+  * **Streamable HTTP**: For connections between clients and the server
+
+## Connecting tools#
+
+Connect Tool nodes (like HTTP Request Tool, Code Tool, or service-specific Tool nodes) to the MCP Server Trigger. The tools become available to MCP clients automatically.
+
+## Instance-level MCP access#
+
+Beyond individual workflows, n8n supports instance-level MCP access where multiple workflows can be exposed to MCP clients:
+
+  * Enable MCP at the instance level first
+  * Then enable each workflow individually
+  * Any connected client sees all enabled workflows
+  * n8n enforces a 5-minute timeout for workflow executions triggered by MCP clients
+
+## Templates and examples#
+
+**Build your own N8N Workflows MCP Server**
+
+by cfomodz
+
+[View template details](https://n8n.io/workflows/3770-build-your-own-n8n-workflows-mcp-server/)
+
+**Hacker News Tool MCP Server**
+
+by David Ashby
+
+[View template details](https://n8n.io/workflows/5244-hacker-news-tool-mcp-server/)
+
+**Google Calendar MCP Server**
+
+[View template details](https://n8n.io/workflows/3677-google-calendar-mcp-server/)
+
+[Browse MCP Server Trigger integration templates](https://n8n.io/integrations/mcp-server-trigger/), or [search all templates](https://n8n.io/workflows/)
+
+## Related resources#
+
+  * [MCP Client Tool node](../sub-nodes/n8n-nodes-langchain.toolmcp/) - For connecting to external MCP servers
+  * [Accessing n8n MCP server](../../../../../advanced-ai/accessing-n8n-mcp-server/) - Instance-level MCP documentation
+  * [Model Context Protocol](https://modelcontextprotocol.io/) - Official MCP specification by Anthropic
+
+---
+
+# integrations/builtin/cluster-nodes/sub-nodes/n8n-nodes-langchain.toolmcp/index.md
+
+# MCP Client Tool node#
+
+The MCP Client Tool enables n8n AI agents to connect to external Model Context Protocol (MCP) servers. This allows your AI workflows to access tools and capabilities provided by MCP servers, extending the agent's abilities beyond n8n's built-in tools.
+
+Use this node as a sub-node connected to an AI Agent node.
+
+## Node parameters#
+
+### SSE Endpoint#
+
+The Server-Sent Events (SSE) endpoint URL of the MCP server you want to connect to. Example: `http://localhost:8000/sse`
+
+### Include#
+
+Choose which tools from the MCP server to make available:
+
+  * **All**: Include all tools from the MCP server
+  * **Selected**: Manually select specific tools to include
+
+### Include Tools#
+
+When **Include** is set to **Selected**, specify which tools to include by their names.
+
+## Authentication#
+
+Configure authentication if required by the MCP server. Options depend on the server's requirements.
+
+## How it works#
+
+1. The MCP Client Tool connects to the specified SSE endpoint
+2. It discovers available tools from the MCP server
+3. The AI Agent can then use these tools during its reasoning process
+4. Tool calls are forwarded to the MCP server for execution
+5. Results are returned to the AI Agent
+
+## Templates and examples#
+
+**MCP Server Github Agent Tool**
+
+by n8n Team
+
+[View template details](https://n8n.io/workflows/4475-mcp-server-github-agent-tool/)
+
+[Browse MCP Client Tool integration templates](https://n8n.io/integrations/mcp-client-tool/), or [search all templates](https://n8n.io/workflows/)
+
+## Related resources#
+
+  * [MCP Server Trigger node](../core-nodes/n8n-nodes-langchain.mcptrigger/) - For exposing n8n tools as an MCP server
+  * [AI Agent node](../cluster-nodes/root-nodes/n8n-nodes-langchain.agent/) - The root node for AI agent workflows
+
+---
+
+# integrations/builtin/app-nodes/n8n-nodes-base.coda/index.md
+
+# Coda node#
+
+Use the Coda node to automate work in Coda and integrate Coda with other applications. n8n has built-in support for a wide range of Coda features, including creating, getting, and deleting controls, formulas, tables, and views.
+
+On this page, you'll find a list of operations the Coda node supports and links to more resources.
+
+## Operations#
+
+### Control#
+
+  * **Get**: Get a control
+  * **Get Many**: Get many controls
+
+### Formula#
+
+  * **Get**: Get a formula
+  * **Get Many**: Get many formulas
+
+### Table#
+
+  * **Create Row**: Create a row in a table
+  * **Delete Row**: Delete a row from a table
+  * **Get All Columns**: Get all columns from a table
+  * **Get All Rows**: Get all rows from a table
+  * **Get Column**: Get a specific column
+  * **Get Row**: Get a specific row
+  * **Push Button**: Push a button in a table
+
+### View#
+
+  * **Delete Row**: Delete a row from a view
+  * **Get**: Get a view
+  * **Get All Columns**: Get all columns from a view
+  * **Get Many**: Get many views
+  * **Get Row**: Get a row from a view
+  * **Push Button**: Push a button in a view
+  * **Update Row**: Update a row in a view
+
+## Credentials#
+
+You can find authentication information for this node in the [Coda credentials](../../../../credentials/coda/) documentation.
+
+## Templates and examples#
+
+**Coda Tool MCP Server**
+
+by David Ashby
+
+[View template details](https://n8n.io/workflows/5319-coda-tool-mcp-server/)
+
+[Browse Coda integration templates](https://n8n.io/integrations/coda/), or [search all templates](https://n8n.io/workflows/)
+
+## What to do if your operation isn't supported#
+
+If the node doesn't support the operation you need, use the [HTTP Request node](../n8n-nodes-base.httprequest/) to call Coda's API.
+
+You can use the credential you created for this node in the HTTP Request node:
+
+1. In the HTTP Request node, select **Authentication** > **Predefined Credential Type**
+2. Select **Coda API** as the credential type
+
+Refer to [Coda's API documentation](https://coda.io/developers/apis/v1) for more information.
+
+---
+
+# integrations/builtin/app-nodes/n8n-nodes-base.lemlist/index.md
+
+# Lemlist node#
+
+Use the Lemlist node to automate work in Lemlist and integrate Lemlist with other applications. n8n has built-in support for a wide range of Lemlist features, including getting activities, teams and campaigns, as well as creating, updating, and deleting leads.
+
+Lemlist is an email outreach platform that allows you to automatically generate personalized images and videos and send personalized cold emails.
+
+On this page, you'll find a list of operations the Lemlist node supports and links to more resources.
+
+## Operations#
+
+### Activity#
+
+  * **Get Many**: Get many activities
+
+### Campaign#
+
+  * **Get Many**: Get many campaigns
+  * **Get Stats**: Get campaign statistics
+
+### Enrichment#
+
+  * **Fetch Completed**: Fetch a previously completed enrichment
+  * **Enrich Lead**: Enrich a lead using an email or LinkedIn URL
+  * **Enrich Person**: Enrich a person using an email or LinkedIn URL
+
+### Lead#
+
+  * **Create**: Create a lead
+  * **Delete**: Delete a lead
+  * **Get**: Get a lead
+  * **Unsubscribe**: Unsubscribe a lead
+
+### Team#
+
+  * **Get**: Get team information
+  * **Get Credits**: Get team credits
+
+### Unsubscribe#
+
+  * **Add Email**: Add an email to the unsubscribe list
+  * **Delete Email**: Delete an email from the unsubscribe list
+  * **Get Many**: Get many unsubscribed emails
+
+## Credentials#
+
+You can find authentication information for this node in the [Lemlist credentials](../../../../credentials/lemlist/) documentation.
+
+## Templates and examples#
+
+**Lemlist Tool MCP Server**
+
+by David Ashby
+
+[View template details](https://n8n.io/workflows/5233-ai-agents-can-create-enrich-leads-with-this-lemlist-tool-mcp-server/)
+
+[Browse Lemlist integration templates](https://n8n.io/integrations/lemlist/), or [search all templates](https://n8n.io/workflows/)
+
+## What to do if your operation isn't supported#
+
+If the node doesn't support the operation you need, use the [HTTP Request node](../n8n-nodes-base.httprequest/) to call Lemlist's API.
+
+You can use the credential you created for this node in the HTTP Request node:
+
+1. In the HTTP Request node, select **Authentication** > **Predefined Credential Type**
+2. Select **Lemlist API** as the credential type
+
+Refer to [Lemlist's API documentation](https://developer.lemlist.com/) for more information.
+
+---
+
 # integrations/builtin/core-nodes/n8n-nodes-langchain.chattrigger/index.md
 
 [ ](https://github.com/n8n-io/n8n-docs/edit/main/docs/integrations/builtin/core-nodes/n8n-nodes-langchain.chattrigger/index.md "Edit this page")
@@ -11976,64 +12245,6 @@ Variable | Type | Default | Description
 `N8N_REINSTALL_MISSING_PACKAGES` | Boolean | `false` | If set to `true`, n8n will automatically attempt to reinstall any missing packages.
 `N8N_TUNNEL_SUBDOMAIN` | String | - | Specifies the subdomain for the n8n tunnel. If not set, n8n generates a random subdomain.
 `N8N_PROXY_HOPS` | Number | 0 | Number of reverse-proxies n8n is running behind.
-Was this page helpful?
-
-Thanks for your feedback!
-
-Thanks for your feedback! Help us improve this page by submitting an issue or a fix in our [GitHub repo](https://github.com/n8n-io/n8n-docs).
-
-Back to top
-
-# integrations/builtin/credentials/medium/index.md
-
-[ ](https://github.com/n8n-io/n8n-docs/edit/main/docs/integrations/builtin/credentials/medium.md "Edit this page")
-
-# Medium credentials#
-
-You can use these credentials to authenticate the following nodes:
-
-  * [Medium](../../app-nodes/n8n-nodes-base.medium/)
-
-Medium API no longer supported
-
-Medium has stopped supporting the Medium API. These credentials still appear within n8n, but you can't configure new integrations using them.
-
-## Prerequisites#
-
-  * Create an account on [Medium](https://www.medium.com/).
-  * For OAuth2, request access to credentials by emailing [yourfriends@medium.com](mailto:yourfriends@medium.com).
-
-## Supported authentication methods#
-
-  * API access token
-  * OAuth2
-
-## Related resources#
-
-Refer to [Medium's API documentation](https://github.com/Medium/medium-api-docs) for more information about the service.
-
-## Using API access token#
-
-To configure this credential, you'll need:
-
-  * An API **Access Token** : Generate a token in **Settings >** [**Security and apps**](https://medium.com/me/settings/security) **> Integration tokens**. Use the integration token this generates as your n8n **Access Token**.
-
-Refer to the Medium API [Self-issued access tokens documentation](https://github.com/Medium/medium-api-docs?tab=readme-ov-file#21-self-issued-access-tokens) for more information.
-
-## Using OAuth2#
-
-To configure this credential, you'll need:
-
-  * A **Client ID**
-  * A **Client Secret**
-
-To generate a **Client ID** and **Client Secret** , you'll need access to the **Developers** menu. From there, create a new application to generate the Client ID and Secret.
-
-Use these settings for your new application:
-
-  * Select **OAuth 2** as the **Authorization Protocol**
-  * Copy the **OAuth Callback URL** from n8n and use this as the **Callback URL** in Medium.
-
 Was this page helpful?
 
 Thanks for your feedback!
@@ -19306,13 +19517,11 @@ The Tools Agent can use the following tools...
   * [JWT](../../../../core-nodes/n8n-nodes-base.jwt/)
   * [Kafka](../../../../app-nodes/n8n-nodes-base.kafka/)
   * [LDAP](../../../../core-nodes/n8n-nodes-base.ldap/)
-  * [Line](../../../../app-nodes/n8n-nodes-base.line/)
   * [LinkedIn](../../../../app-nodes/n8n-nodes-base.linkedin/)
   * [Mailcheck](../../../../app-nodes/n8n-nodes-base.mailcheck/)
   * [Mailgun](../../../../app-nodes/n8n-nodes-base.mailgun/)
   * [Mattermost](../../../../app-nodes/n8n-nodes-base.mattermost/)
   * [Mautic](../../../../app-nodes/n8n-nodes-base.mautic/)
-  * [Medium](../../../../app-nodes/n8n-nodes-base.medium/)
   * [Microsoft Excel 365](../../../../app-nodes/n8n-nodes-base.microsoftexcel/)
   * [Microsoft OneDrive](../../../../app-nodes/n8n-nodes-base.microsoftonedrive/)
   * [Microsoft Outlook](../../../../app-nodes/n8n-nodes-base.microsoftoutlook/)
@@ -21333,65 +21542,6 @@ by Ghufran Ridhawi
 [View template details](https://n8n.io/workflows/3834-retrieve-nasa-space-weather-and-asteroid-data-with-gpt-4o-mini-and-telegram/)
 
 [Browse NASA integration templates](https://n8n.io/integrations/nasa/), or [search all templates](https://n8n.io/workflows/)
-
-Was this page helpful?
-
-Thanks for your feedback!
-
-Thanks for your feedback! Help us improve this page by submitting an issue or a fix in our [GitHub repo](https://github.com/n8n-io/n8n-docs).
-
-Back to top
-
-# integrations/builtin/credentials/line/index.md
-
-[ ](https://github.com/n8n-io/n8n-docs/edit/main/docs/integrations/builtin/credentials/line.md "Edit this page")
-
-# Line credentials#
-
-Deprecated: End of service
-
-LINE Notify is discontinuing service as of April 1st 2025 and this node will no longer work after that date. View LINE Notify's [end of service announement](https://notify-bot.line.me/closing-announce) for more information.
-
-You can use these credentials to authenticate the following nodes:
-
-  * [Line](../../app-nodes/n8n-nodes-base.line/)
-
-## Supported authentication methods#
-
-  * Notify OAuth2
-
-## Related resources#
-
-Refer to [Line Notify's API documentation](https://notify-bot.line.me/doc/en/) for more information about the service.
-
-## Using Notify OAuth2#
-
-To configure this credential, you'll need a [Line](https://line.me/en/) account and:
-
-  * A **Client ID**
-  * A **Client Secret**
-
-To generate both, connect Line with [Line Notify](https://notify-bot.line.me/en/). Then:
-
-  1. Open the Line Notify page to [add a new service](https://notify-bot.line.me/my/services/new).
-  2. Enter a **Service name**. This name displays when someone tries to connect to the service.
-  3. Enter a **Service description**.
-  4. Enter a **Service URL**
-  5. Enter your **Company/Enterprise**.
-  6. Select your **Country/region**.
-  7. Enter your name or team name as the **Representative**.
-  8. Enter a valid **Email address**. Line will verify this email address before the service is fully registered. Use an email address you have ready access to.
-  9. Copy the **OAuth Redirect URL** from your n8n credential and enter it as the **Callback URL** in Line Notify.
-  10. Select **Agree and continue** to agree to the terms of service.
-  11. Verify the information you entered is correct and select **Add**.
-  12. Check your email and open the Line Notify Registration URL to verify your email address.
-  13. Once verification is complete, open [**My services**](https://notify-bot.line.me/my/services/).
-  14. Select the service you just added.
-  15. Copy the **Client ID** and enter it in your n8n credential.
-  16. Select the option to **Display** the **Client Secret**. Copy the **Client Secret** and enter it in your n8n credential.
-  17. In n8n, select **Connect my account** and follow the on-screen prompts to finish the credential.
-
-Refer to the Authentication section of [Line Notify's API documentation](https://notify-bot.line.me/doc/en/) for more information.
 
 Was this page helpful?
 
@@ -37803,75 +37953,6 @@ Thanks for your feedback! Help us improve this page by submitting an issue or a 
 
 Back to top
 
-# integrations/builtin/app-nodes/n8n-nodes-base.line/index.md
-
-[ ](https://github.com/n8n-io/n8n-docs/edit/main/docs/integrations/builtin/app-nodes/n8n-nodes-base.line.md "Edit this page")
-
-# Line node#
-
-Deprecated: End of service
-
-LINE Notify is discontinuing service as of April 1st 2025 and this node will no longer work after that date. View LINE Notify's [end of service announement](https://notify-bot.line.me/closing-announce) for more information.
-
-Use the Line node to automate work in Line, and integrate Line with other applications. n8n has built-in support for a wide range of Line features, including sending notifications.
-
-On this page, you'll find a list of operations the Line node supports and links to more resources.
-
-Credentials
-
-Refer to [Line credentials](../../credentials/line/) for guidance on setting up authentication.
-
-This node can be used as an AI tool
-
-This node can be used to enhance the capabilities of an AI agent. When used in this way, many parameters can be set automatically, or with information directed by AI - find out more in the [AI tool parameters documentation](../../../../advanced-ai/examples/using-the-fromai-function/).
-
-## Operations#
-
-  * Notification
-    * Sends notifications to users or groups
-
-## Templates and examples#
-
-**Customer Support Channel and Ticketing System with Slack and Linear**
-
-by Jimleuk
-
-[View template details](https://n8n.io/workflows/2323-customer-support-channel-and-ticketing-system-with-slack-and-linear/)
-
-**Line Message API : Push Message & Reply**
-
-by darrell_tw
-
-[View template details](https://n8n.io/workflows/2733-line-message-api-push-message-and-reply/)
-
-**Send daily weather updates via a notification in Line**
-
-by Harshil Agrawal
-
-[View template details](https://n8n.io/workflows/773-send-daily-weather-updates-via-a-notification-in-line/)
-
-[Browse Line integration templates](https://n8n.io/integrations/line/), or [search all templates](https://n8n.io/workflows/)
-
-## What to do if your operation isn't supported#
-
-If this node doesn't support the operation you want to do, you can use the [HTTP Request node](../../core-nodes/n8n-nodes-base.httprequest/) to call the service's API.
-
-You can use the credential you created for this service in the HTTP Request node:
-
-  1. In the HTTP Request node, select **Authentication** > **Predefined Credential Type**.
-  2. Select the service you want to connect to.
-  3. Select your credential.
-
-Refer to [Custom API operations](../../../custom-operations/) for more information.
-
-Was this page helpful?
-
-Thanks for your feedback!
-
-Thanks for your feedback! Help us improve this page by submitting an issue or a fix in our [GitHub repo](https://github.com/n8n-io/n8n-docs).
-
-Back to top
-
 # integrations/builtin/trigger-nodes/n8n-nodes-base.kafkatrigger/index.md
 
 [ ](https://github.com/n8n-io/n8n-docs/edit/main/docs/integrations/builtin/trigger-nodes/n8n-nodes-base.kafkatrigger.md "Edit this page")
@@ -51849,75 +51930,6 @@ Consider following these guidelines while building your node if you want to subm
   * Use **TypeScript** and follow n8n's [**node development guidelines**](../../../overview/).
   * Ensure proper error handling and validation.
   * Make sure the linter passes (in other words, make sure running `npx @n8n/scan-community-package n8n-nodes-PACKAGE` passes).
-
-Was this page helpful?
-
-Thanks for your feedback!
-
-Thanks for your feedback! Help us improve this page by submitting an issue or a fix in our [GitHub repo](https://github.com/n8n-io/n8n-docs).
-
-Back to top
-
-# integrations/builtin/app-nodes/n8n-nodes-base.medium/index.md
-
-[ ](https://github.com/n8n-io/n8n-docs/edit/main/docs/integrations/builtin/app-nodes/n8n-nodes-base.medium.md "Edit this page")
-
-# Medium node#
-
-Use the Medium node to automate work in Medium, and integrate Medium with other applications. n8n has built-in support for a wide range of Medium features, including creating posts, and getting publications.
-
-On this page, you'll find a list of operations the Medium node supports and links to more resources.
-
-Medium API no longer supported
-
-Medium has stopped supporting the Medium API. The Medium node still appears within n8n, but you won't be able to configure new API keys to authenticate with.
-
-Refer to [Medium credentials](../../credentials/medium/) for guidance on setting up existing API keys.
-
-This node can be used as an AI tool
-
-This node can be used to enhance the capabilities of an AI agent. When used in this way, many parameters can be set automatically, or with information directed by AI - find out more in the [AI tool parameters documentation](../../../../advanced-ai/examples/using-the-fromai-function/).
-
-## Operations#
-
-  * Post
-    * Create a post
-  * Publication
-    * Get all publications
-
-## Templates and examples#
-
-**Cross-post your blog posts**
-
-by amudhan
-
-[View template details](https://n8n.io/workflows/418-cross-post-your-blog-posts/)
-
-**Posting from Wordpress to Medium**
-
-by Imperol
-
-[View template details](https://n8n.io/workflows/2062-posting-from-wordpress-to-medium/)
-
-**Publish a post to a publication on Medium**
-
-by Harshil Agrawal
-
-[View template details](https://n8n.io/workflows/594-publish-a-post-to-a-publication-on-medium/)
-
-[Browse Medium integration templates](https://n8n.io/integrations/medium/), or [search all templates](https://n8n.io/workflows/)
-
-## What to do if your operation isn't supported#
-
-If this node doesn't support the operation you want to do, you can use the [HTTP Request node](../../core-nodes/n8n-nodes-base.httprequest/) to call the service's API.
-
-You can use the credential you created for this service in the HTTP Request node:
-
-  1. In the HTTP Request node, select **Authentication** > **Predefined Credential Type**.
-  2. Select the service you want to connect to.
-  3. Select your credential.
-
-Refer to [Custom API operations](../../../custom-operations/) for more information.
 
 Was this page helpful?
 
