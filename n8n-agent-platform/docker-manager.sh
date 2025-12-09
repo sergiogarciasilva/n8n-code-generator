@@ -177,7 +177,7 @@ shell_service() {
             ;;
         redis)
             print_info "Connecting to Redis..."
-            docker exec -it n8n_agent_platform_redis redis-cli -a n8n_agent_redis_password_2024
+            docker exec -it n8n_agent_platform_redis redis-cli -a "${REDIS_PASSWORD:-changeme}"
             ;;
         n8n)
             print_info "Opening n8n container shell..."
@@ -203,7 +203,7 @@ health_check() {
     fi
     
     # Check Redis
-    if docker exec n8n_agent_platform_redis redis-cli -a n8n_agent_redis_password_2024 ping &> /dev/null; then
+    if docker exec n8n_agent_platform_redis redis-cli -a "${REDIS_PASSWORD:-changeme}" ping &> /dev/null; then
         print_success "Redis is healthy"
     else
         print_error "Redis is not responding"

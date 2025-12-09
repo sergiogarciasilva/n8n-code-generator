@@ -184,7 +184,7 @@ DB_PASSWORD=n8n_agent_secure_password_2024
 # Redis (Puerto aislado)
 REDIS_HOST=localhost
 REDIS_PORT=6380
-REDIS_PASSWORD=n8n_agent_redis_password_2024
+REDIS_PASSWORD=<your_redis_password>
 
 # n8n Configuration (Puerto aislado)
 N8N_HOST=localhost

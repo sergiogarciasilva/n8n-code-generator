@@ -58,7 +58,7 @@ docker-compose down -v
 ### Redis Cache
 - **Container**: `n8n_agent_platform_redis`
 - **Port**: `6380` (host) → `6379` (container)
-- **Password**: `n8n_agent_redis_password_2024`
+- **Password**: Set via `REDIS_PASSWORD` environment variable
 - **Max Memory**: 256MB with LRU eviction
 
 ### n8n Instance
