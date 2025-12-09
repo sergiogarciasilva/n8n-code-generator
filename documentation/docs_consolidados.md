@@ -16603,7 +16603,7 @@ To configure this credential, you'll need the Prerequisites listed above. Then:
   1. Select **Connection String** as the **Configuration Type**.
   2. Enter your MongoDB **Connection String**. To get your connection string in MongoDB, go to **Database > Connect**.
      1. Select **Drivers**.
-     2. Copy the code you see in **Add your connection string into your application code**. It will be something like: `mongodb+srv://yourName:yourPassword@clusterName.mongodb.net/?retryWrites=true&w=majority`.
+     2. Copy the code you see in **Add your connection string into your application code**. It will be something like: `mongodb+srv://<username>:<password>@<cluster-name>.mongodb.net/?retryWrites=true&w=majority`.
      3. Replace the `<password>` and `<username>` in the connection string with the database user's credentials you'll be using.
      4. Enter that connection string into n8n.
      5. Refer to [Connection String](https://www.mongodb.com/docs/manual/reference/connection-string/) for information on finding and formatting your connection string.
