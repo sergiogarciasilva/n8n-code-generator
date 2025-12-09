@@ -1,0 +1,119 @@
+{
+  "name": "n8n-agent-platform",
+  "version": "1.0.0",
+  "description": "Autonomous AI Agent Platform for n8n Workflow Optimization",
+  "main": "launcher.js",
+  "private": true,
+  "workspaces": [
+    "core",
+    "vscode-extension",
+    "web-dashboard",
+    "shared"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:core\" \"npm run dev:dashboard\" \"npm run dev:extension\"",
+    "dev:core": "npm run dev --workspace=core",
+    "dev:dashboard": "npm run dev --workspace=web-dashboard",
+    "dev:extension": "npm run watch --workspace=vscode-extension",
+    "build": "npm run build:shared && npm run build:core && npm run build:dashboard && npm run build:extension",
+    "build:shared": "npm run build --workspace=shared",
+    "build:core": "npm run build --workspace=core",
+    "build:dashboard": "npm run build --workspace=web-dashboard",
+    "build:extension": "npm run build --workspace=vscode-extension",
+    "start": "npm run start --workspace=core",
+    "test": "npm run test --workspaces",
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "setup": "npm install && npm run setup:db",
+    "setup:db": "npm run db:migrate --workspace=core && npm run db:seed --workspace=core",
+    "launcher": "electron .",
+    "launcher:dev": "cross-env NODE_ENV=development electron .",
+    "launcher:build": "npm run build && electron-builder",
+    "launcher:dist": "electron-builder --publish=never",
+    "launcher:dist:win": "electron-builder --win",
+    "launcher:dist:mac": "electron-builder --mac",
+    "launcher:dist:linux": "electron-builder --linux"
+  },
+  "devDependencies": {
+    "@types/electron-is-dev": "^0.3.0",
+    "@types/node": "^20.10.0",
+    "@typescript-eslint/eslint-plugin": "^6.15.0",
+    "@typescript-eslint/parser": "^6.15.0",
+    "canvas": "^3.1.2",
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3",
+    "electron": "^37.1.0",
+    "electron-builder": "^26.0.12",
+    "electron-is-dev": "^3.0.1",
+    "eslint": "^8.56.0",
+    "prettier": "^3.1.1",
+    "typescript": "^5.3.3",
+    "wait-on": "^8.0.3"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  },
+  "build": {
+    "appId": "com.n8n.agent.platform",
+    "productName": "n8n Agent Platform",
+    "directories": {
+      "output": "dist-electron"
+    },
+    "files": [
+      "launcher.js",
+      "preload.js",
+      "assets/**/*",
+      "core/dist/**/*",
+      "web-dashboard/dist/**/*",
+      "shared/dist/**/*",
+      "node_modules/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "core",
+        "to": "core",
+        "filter": [
+          "**/*",
+          "!node_modules/**/*",
+          "!src/**/*",
+          "!*.ts"
+        ]
+      },
+      {
+        "from": "web-dashboard",
+        "to": "web-dashboard",
+        "filter": [
+          "**/*",
+          "!node_modules/**/*",
+          "!src/**/*",
+          "!*.ts",
+          "!*.tsx"
+        ]
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "icon": "assets/icon.png"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.png"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Development",
+      "icon": "assets/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  }
+}

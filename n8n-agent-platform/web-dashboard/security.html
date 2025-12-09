@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise Security - n8n Agent Platform</title>
+    <link rel="stylesheet" href="styles/glassmorphism.css">
+    <style>
+        /* Page-specific styles */
+        .security-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 24px;
+            margin-bottom: 30px;
+        }
+        
+        .security-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .security-icon {
+            font-size: 2.5rem;
+            margin-right: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 60px;
+            height: 60px;
+            background: var(--surface-secondary);
+            backdrop-filter: blur(8px);
+            border-radius: 16px;
+            border: 1px solid var(--border-glass);
+        }
+        
+        .security-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            flex: 1;
+        }
+        
+        .security-status {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            backdrop-filter: blur(8px);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .status-secure {
+            background: rgba(50, 215, 75, 0.15);
+            color: var(--accent-green);
+            border: 1px solid rgba(50, 215, 75, 0.3);
+        }
+        
+        .status-warning {
+            background: rgba(255, 214, 10, 0.15);
+            color: var(--accent-yellow);
+            border: 1px solid rgba(255, 214, 10, 0.3);
+        }
+        
+        .status-critical {
+            background: rgba(255, 69, 58, 0.15);
+            color: var(--accent-red);
+            border: 1px solid rgba(255, 69, 58, 0.3);
+        }
+        
+        .metric-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .metric-item {
+            text-align: center;
+            padding: 16px;
+            background: var(--surface-secondary);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border-glass);
+            border-radius: 12px;
+            transition: var(--transition-smooth);
+        }
+        
+        .metric-item:hover {
+            background: var(--surface-hover);
+            transform: translateY(-2px);
+        }
+        
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--accent-blue);
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+        
+        .metric-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .audit-section {
+            margin-bottom: 24px;
+        }
+        
+        .audit-controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .audit-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+        
+        .audit-table th,
+        .audit-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-glass);
+        }
+        
+        .audit-table th {
+            background: var(--surface-secondary);
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 0.875rem;
+            backdrop-filter: blur(8px);
+        }
+        
+        .audit-table tr:hover td {
+            background: var(--surface-hover);
+        }
+        
+        .threat-level-low { 
+            color: var(--accent-green);
+            font-weight: 600;
+        }
+        
+        .threat-level-medium { 
+            color: var(--accent-yellow);
+            font-weight: 600;
+        }
+        
+        .threat-level-high { 
+            color: var(--accent-red);
+            font-weight: 600;
+        }
+        
+        .log-output {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(12px);
+            color: var(--text-primary);
+            padding: 20px;
+            border-radius: 12px;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            border: 1px solid var(--border-glass);
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+        }
+        
+        .log-output::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .log-output::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+        
+        .log-output::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+        }
+        
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background: currentColor;
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="background-wrapper">
+        <div class="gradient-orb"></div>
+        <div class="gradient-orb"></div>
+        <div class="gradient-orb"></div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <a href="enterprise-dashboard.html" class="nav-item">
+                    ← Dashboard
+                </a>
+                <h1 style="font-size: 1.5rem; font-weight: 600;">
+                    🔒 Enterprise Security
+                </h1>
+            </div>
+            <div class="flex gap-2">
+                <a href="ai-agents.html" class="nav-item">
+                    🤖 AI Agents
+                </a>
+                <a href="advanced-metrics-dashboard.html" class="nav-item">
+                    📊 Metrics
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container" style="max-width: 1400px; margin: 0 auto; padding: 32px;">
+        <!-- Header -->
+        <div class="glass-container p-4 mb-4 fade-in">
+            <div class="text-center">
+                <h2 style="font-size: 2.5rem; font-weight: 600; margin-bottom: 12px;">
+                    🔒 Enterprise Security
+                </h2>
+                <p style="color: var(--text-secondary); font-size: 1.25rem;">
+                    Autenticación, autorización y auditoría avanzada
+                </p>
+            </div>
+        </div>
+
+        <!-- Security Grid -->
+        <div class="security-grid">
+            <!-- JWT Authentication -->
+            <div class="glass-card fade-in" style="animation-delay: 0.1s;">
+                <div class="security-header">
+                    <div class="security-icon">🔐</div>
+                    <div class="security-title">JWT Authentication</div>
+                    <span class="security-status status-secure">
+                        <span class="pulse-dot"></span>
+                        Seguro
+                    </span>
+                </div>
+                <div class="metric-grid">
+                    <div class="metric-item">
+                        <div class="metric-value">847</div>
+                        <div class="metric-label">Tokens Activos</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-value" style="color: var(--accent-green);">24</div>
+                        <div class="metric-label">Sesiones Hoy</div>
+                    </div>
+                </div>
+                <div class="action-buttons">
+                    <button class="btn btn-primary" onclick="manageTokens()">
+                        Gestionar Tokens
+                    </button>
+                    <button class="btn btn-glass" onclick="revokeTokens()">
+                        Revocar Tokens
+                    </button>
+                </div>
+            </div>
+
+            <!-- 2FA Authentication -->
+            <div class="glass-card fade-in" style="animation-delay: 0.2s;">
+                <div class="security-header">
+                    <div class="security-icon">🛡️</div>
+                    <div class="security-title">2FA Authentication</div>
+                    <span class="security-status status-secure">
+                        <span class="pulse-dot"></span>
+                        Activo
+                    </span>
+                </div>
+                <div class="metric-grid">
+                    <div class="metric-item">
+                        <div class="metric-value" style="color: var(--accent-purple);">89%</div>
+                        <div class="metric-label">Adopción 2FA</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-value" style="color: var(--accent-blue);">156</div>
+                        <div class="metric-label">Usuarios Protegidos</div>
+                    </div>
+                </div>
+                <div class="action-buttons">
+                    <button class="btn btn-primary" onclick="configure2FA()">
+                        Configurar 2FA
+                    </button>
+                    <button class="btn btn-glass" onclick="backup2FA()">
+                        Códigos Backup
+                    </button>
+                </div>
+            </div>
+
+            <!-- Role-Based Access -->
+            <div class="glass-card fade-in" style="animation-delay: 0.3s;">
+                <div class="security-header">
+                    <div class="security-icon">👥</div>
+                    <div class="security-title">Role-Based Access</div>
+                    <span class="security-status status-secure">
+                        <span class="pulse-dot"></span>
+                        Configurado
+                    </span>
+                </div>
+                <div class="metric-grid">
+                    <div class="metric-item">
+                        <div class="metric-value" style="color: var(--accent-yellow);">12</div>
+                        <div class="metric-label">Roles Definidos</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-value" style="color: var(--accent-orange);">234</div>
+                        <div class="metric-label">Permisos Asignados</div>
+                    </div>
+                </div>
+                <div class="action-buttons">
+                    <button class="btn btn-primary" onclick="manageRoles()">
+                        Gestionar Roles
+                    </button>
+                    <button class="btn btn-glass" onclick="auditPermissions()">
+                        Auditar Permisos
+                    </button>
+                </div>
+            </div>
+
+            <!-- Threat Detection -->
+            <div class="glass-card fade-in" style="animation-delay: 0.4s;">
+                <div class="security-header">
+                    <div class="security-icon">🔍</div>
+                    <div class="security-title">Threat Detection</div>
+                    <span class="security-status status-warning">
+                        <span class="pulse-dot"></span>
+                        Monitoreando
+                    </span>
+                </div>
+                <div class="metric-grid">
+                    <div class="metric-item">
+                        <div class="metric-value" style="color: var(--accent-red);">3</div>
+                        <div class="metric-label">Amenazas Detectadas</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-value" style="color: var(--accent-green);">99.8%</div>
+                        <div class="metric-label">Tiempo Actividad</div>
+                    </div>
+                </div>
+                <div class="action-buttons">
+                    <button class="btn btn-warning" onclick="viewThreats()">
+                        Ver Amenazas
+                    </button>
+                    <button class="btn btn-glass" onclick="updateRules()">
+                        Actualizar Reglas
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Audit Section -->
+        <div class="audit-section">
+            <div class="glass-card fade-in" style="animation-delay: 0.5s;">
+                <h3 style="font-size: 1.5rem; font-weight: 500; margin-bottom: 20px;">
+                    📊 Registro de Auditoría
+                </h3>
+                <div class="audit-controls">
+                    <button class="btn btn-primary" onclick="refreshAudit()">
+                        🔄 Actualizar
+                    </button>
+                    <button class="btn btn-glass" onclick="exportAudit()">
+                        📤 Exportar
+                    </button>
+                    <button class="btn btn-glass" onclick="filterAudit()">
+                        🔍 Filtrar
+                    </button>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table class="audit-table">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Usuario</th>
+                        <th>Acción</th>
+                        <th>Recurso</th>
+                        <th>IP</th>
+                        <th>Nivel</th>
+                    </tr>
+                </thead>
+                <tbody id="audit-tbody">
+                    <tr>
+                        <td>2025-06-27 23:25:14</td>
+                        <td>admin@n8n-agent.com</td>
+                        <td>LOGIN_SUCCESS</td>
+                        <td>/api/auth/login</td>
+                        <td>192.168.1.100</td>
+                        <td class="threat-level-low">INFO</td>
+                    </tr>
+                    <tr>
+                        <td>2025-06-27 23:24:52</td>
+                        <td>user@company.com</td>
+                        <td>PERMISSION_DENIED</td>
+                        <td>/api/admin/users</td>
+                        <td>192.168.1.45</td>
+                        <td class="threat-level-medium">WARN</td>
+                    </tr>
+                    <tr>
+                        <td>2025-06-27 23:23:38</td>
+                        <td>system</td>
+                        <td>SUSPICIOUS_ACTIVITY</td>
+                        <td>/api/data/export</td>
+                        <td>203.0.113.45</td>
+                        <td class="threat-level-high">CRITICAL</td>
+                    </tr>
+                    <tr>
+                        <td>2025-06-27 23:22:15</td>
+                        <td>service@n8n-agent.com</td>
+                        <td>TOKEN_REFRESH</td>
+                        <td>/api/auth/refresh</td>
+                        <td>127.0.0.1</td>
+                        <td class="threat-level-low">INFO</td>
+                    </tr>
+                </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Logs Section -->
+        <div class="glass-container p-4 fade-in" style="animation-delay: 0.6s;">
+            <h3 style="font-size: 1.5rem; font-weight: 500; margin-bottom: 20px;">
+                📋 Security Logs
+            </h3>
+            <div id="security-logs" class="log-output">
+[23:25:14] JWT: Token validado para admin@n8n-agent.com
+[23:24:52] RBAC: Acceso denegado - usuario sin permisos admin
+[23:23:38] THREAT: Actividad sospechosa detectada desde IP externa
+[23:22:15] AUTH: Token de servicio renovado automáticamente
+[23:21:44] 2FA: Código TOTP validado correctamente
+[23:20:30] AUDIT: Exportación de logs completada
+            </div>
+            <div style="margin-top: 20px; display: flex; gap: 12px; flex-wrap: wrap;">
+                <button class="btn btn-glass" onclick="refreshSecurityLogs()">
+                    🔄 Actualizar Logs
+                </button>
+                <button class="btn btn-glass" onclick="downloadLogs()">
+                    📥 Descargar
+                </button>
+                <button class="btn btn-warning" onclick="alertSecurity()">
+                    🚨 Alerta Manual
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function manageTokens() {
+            addSecurityLog('🔐 Abriendo gestión de tokens JWT');
+            showNotification('Gestión de tokens JWT abierta');
+        }
+
+        function revokeTokens() {
+            addSecurityLog('⚠️ Revocando tokens seleccionados');
+        }
+
+        function configure2FA() {
+            addSecurityLog('🛡️ Configurando autenticación de dos factores');
+        }
+
+        function backup2FA() {
+            addSecurityLog('💾 Generando códigos de backup 2FA');
+        }
+
+        function manageRoles() {
+            addSecurityLog('👥 Abriendo gestión de roles y permisos');
+        }
+
+        function auditPermissions() {
+            addSecurityLog('🔍 Iniciando auditoría de permisos');
+        }
+
+        function viewThreats() {
+            addSecurityLog('🚨 Mostrando amenazas detectadas');
+        }
+
+        function updateRules() {
+            addSecurityLog('🔄 Actualizando reglas de detección');
+        }
+
+        function refreshAudit() {
+            addSecurityLog('📊 Actualizando registro de auditoría');
+        }
+
+        function exportAudit() {
+            addSecurityLog('📤 Exportando logs de auditoría');
+        }
+
+        function filterAudit() {
+            addSecurityLog('🔍 Aplicando filtros de auditoría');
+        }
+
+        function refreshSecurityLogs() {
+            addSecurityLog('🔄 Logs de seguridad actualizados');
+        }
+
+        function downloadLogs() {
+            addSecurityLog('📥 Descargando logs de seguridad');
+        }
+
+        function alertSecurity() {
+            addSecurityLog('🚨 ALERTA MANUAL: Incidente de seguridad reportado');
+        }
+
+        function addSecurityLog(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logElement = document.getElementById('security-logs');
+            logElement.textContent += `\n[${timestamp}] ${message}`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                background: var(--surface-primary);
+                backdrop-filter: blur(12px);
+                border: 1px solid var(--border-glass);
+                border-radius: 12px;
+                padding: 16px 24px;
+                box-shadow: var(--shadow-glass);
+                animation: fadeIn 0.3s ease-out;
+                z-index: 1000;
+                color: var(--text-primary);
+                font-family: var(--font-rounded);
+            `;
+            notification.innerHTML = message;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
+        }
+
+        // Simulación de eventos de seguridad
+        setInterval(() => {
+            const events = [
+                'JWT: Validación de token exitosa',
+                'RBAC: Verificación de permisos completada',
+                '2FA: Código TOTP validado',
+                'AUDIT: Nuevo evento registrado',
+                'MONITOR: Sistema funcionando correctamente'
+            ];
+            const randomEvent = events[Math.floor(Math.random() * events.length)];
+            addSecurityLog(randomEvent);
+        }, 20000);
+
+        // Update all functions to use showNotification
+        document.querySelectorAll('button').forEach(btn => {
+            const originalOnclick = btn.onclick;
+            if (originalOnclick && originalOnclick.name !== 'showNotification') {
+                btn.addEventListener('click', () => {
+                    setTimeout(() => showNotification(`Acción ejecutada: ${btn.textContent.trim()}`), 100);
+                });
+            }
+        });
+    </script>
+</body>
+</html>

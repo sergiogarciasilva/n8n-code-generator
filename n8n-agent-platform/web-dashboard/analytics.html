@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Analytics - n8n Agent Platform</title>
+    <link rel="stylesheet" href="styles/glassmorphism.css">
+    <style>
+        /* Page-specific styles */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 30px;
+        }
+        
+        .metric-card {
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .metric-icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+            display: block;
+        }
+        
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            line-height: 1;
+        }
+        
+        .metric-label {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            margin-bottom: 12px;
+        }
+        
+        .metric-change {
+            font-size: 0.875rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            backdrop-filter: blur(8px);
+        }
+        
+        .change-positive {
+            background: rgba(50, 215, 75, 0.15);
+            color: var(--accent-green);
+            border: 1px solid rgba(50, 215, 75, 0.3);
+        }
+        
+        .change-negative {
+            background: rgba(255, 69, 58, 0.15);
+            color: var(--accent-red);
+            border: 1px solid rgba(255, 69, 58, 0.3);
+        }
+        
+        .chart-placeholder {
+            width: 100%;
+            height: 300px;
+            background: var(--surface-secondary);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border-glass);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            color: var(--text-secondary);
+            font-size: 1.125rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .chart-placeholder::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent 48%, var(--border-glass) 50%, transparent 52%);
+            animation: shimmer 2s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% { transform: translate(-100%, -100%) rotate(45deg); }
+            100% { transform: translate(100%, 100%) rotate(45deg); }
+        }
+        
+        .chart-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 30px;
+        }
+        
+        @media (max-width: 968px) {
+            .chart-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+        
+        .prediction-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            background: var(--surface-secondary);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border-glass);
+            border-radius: 12px;
+            margin-bottom: 12px;
+            transition: var(--transition-smooth);
+        }
+        
+        .prediction-item:hover {
+            background: var(--surface-hover);
+            transform: translateX(4px);
+        }
+        
+        .prediction-label {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+        
+        .prediction-value {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--accent-blue);
+        }
+        
+        .anomaly-item {
+            display: flex;
+            align-items: center;
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            border-left: 4px solid;
+            backdrop-filter: blur(8px);
+            transition: var(--transition-smooth);
+        }
+        
+        .anomaly-item:hover {
+            transform: translateX(4px);
+        }
+        
+        .anomaly-critical {
+            background: rgba(255, 69, 58, 0.15);
+            border-color: var(--accent-red);
+            color: var(--text-primary);
+        }
+        
+        .anomaly-warning {
+            background: rgba(255, 214, 10, 0.15);
+            border-color: var(--accent-yellow);
+            color: var(--text-primary);
+        }
+        
+        .anomaly-info {
+            background: rgba(10, 132, 255, 0.15);
+            border-color: var(--accent-blue);
+            color: var(--text-primary);
+        }
+        
+        .anomaly-icon {
+            font-size: 1.5rem;
+            margin-right: 16px;
+        }
+        
+        .anomaly-text {
+            flex: 1;
+        }
+        
+        .anomaly-text strong {
+            display: block;
+            margin-bottom: 4px;
+            color: var(--text-primary);
+        }
+        
+        .anomaly-time {
+            color: var(--text-tertiary);
+            font-size: 0.875rem;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="background-wrapper">
+        <div class="gradient-orb"></div>
+        <div class="gradient-orb"></div>
+        <div class="gradient-orb"></div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <a href="enterprise-dashboard.html" class="nav-item">
+                    ← Dashboard
+                </a>
+                <h1 style="font-size: 1.5rem; font-weight: 600;">
+                    📈 Advanced Analytics
+                </h1>
+            </div>
+            <div class="flex gap-2">
+                <a href="ai-agents.html" class="nav-item">
+                    🤖 AI Agents
+                </a>
+                <a href="security.html" class="nav-item">
+                    🔒 Security
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container" style="max-width: 1400px; margin: 0 auto; padding: 32px;">
+        <!-- Header -->
+        <div class="glass-container p-4 mb-4 fade-in">
+            <div class="text-center">
+                <h2 style="font-size: 2.5rem; font-weight: 600; margin-bottom: 12px;">
+                    📈 Advanced Analytics
+                </h2>
+                <p style="color: var(--text-secondary); font-size: 1.25rem;">
+                    Analytics predictivos, ML y detección de anomalías
+                </p>
+            </div>
+        </div>
+
+        <!-- Metrics Grid -->
+        <div class="metrics-grid">
+            <div class="glass-card metric-card fade-in" style="animation-delay: 0.1s;">
+                <div class="metric-icon">🚀</div>
+                <div class="metric-value">1,247</div>
+                <div class="metric-label">Workflows Ejecutados</div>
+                <div class="metric-change change-positive">↗ +12.5% vs ayer</div>
+            </div>
+
+            <div class="glass-card metric-card fade-in" style="animation-delay: 0.15s;">
+                <div class="metric-icon">⚡</div>
+                <div class="metric-value">98.7%</div>
+                <div class="metric-label">Tasa de Éxito</div>
+                <div class="metric-change change-positive">↗ +0.3% vs ayer</div>
+            </div>
+
+            <div class="glass-card metric-card fade-in" style="animation-delay: 0.2s;">
+                <div class="metric-icon">⏱️</div>
+                <div class="metric-value">2.3s</div>
+                <div class="metric-label">Tiempo Promedio</div>
+                <div class="metric-change change-negative">↗ +0.1s vs ayer</div>
+            </div>
+
+            <div class="glass-card metric-card fade-in" style="animation-delay: 0.25s;">
+                <div class="metric-icon">💰</div>
+                <div class="metric-value">$147.23</div>
+                <div class="metric-label">Ahorro Estimado</div>
+                <div class="metric-change change-positive">↗ +$23.45 vs ayer</div>
+            </div>
+
+            <div class="glass-card metric-card fade-in" style="animation-delay: 0.3s;">
+                <div class="metric-icon">🤖</div>
+                <div class="metric-value">847</div>
+                <div class="metric-label">AI Predictions</div>
+                <div class="metric-change change-positive">↗ +156 vs ayer</div>
+            </div>
+
+            <div class="glass-card metric-card fade-in" style="animation-delay: 0.35s;">
+                <div class="metric-icon">🔍</div>
+                <div class="metric-value">3</div>
+                <div class="metric-label">Anomalías Detectadas</div>
+                <div class="metric-change change-negative">↗ +1 vs ayer</div>
+            </div>
+        </div>
+
+        <!-- Analytics Controls -->
+        <div class="glass-card fade-in" style="animation-delay: 0.4s;">
+            <h3 style="font-size: 1.5rem; font-weight: 500; margin-bottom: 20px;">
+                🎛️ Controles de Analytics
+            </h3>
+            <div class="controls-grid">
+                <button class="btn btn-primary" onclick="runAnalysis()">
+                    🔍 Ejecutar Análisis
+                </button>
+                <button class="btn btn-accent" onclick="generateReport()">
+                    📊 Generar Reporte
+                </button>
+                <button class="btn btn-warning" onclick="trainModel()">
+                    🧠 Entrenar Modelo
+                </button>
+                <button class="btn btn-glass" onclick="exportData()">
+                    📤 Exportar Datos
+                </button>
+                <button class="btn btn-glass" onclick="configureAlerts()">
+                    🔔 Configurar Alertas
+                </button>
+                <button class="btn btn-glass" onclick="optimizePerformance()">
+                    ⚡ Optimizar Performance
+                </button>
+            </div>
+        </div>
+
+        <!-- Chart Grid -->
+        <div class="chart-grid">
+            <div class="glass-card fade-in" style="animation-delay: 0.5s;">
+                <h3 style="font-size: 1.25rem; font-weight: 500; margin-bottom: 20px;">
+                    📈 Tendencias de Uso
+                </h3>
+                <div class="chart-placeholder">
+                    <span style="font-weight: 600;">Gráfico de Tendencias</span>
+                    <small style="color: var(--text-tertiary);">Workflows ejecutados por hora en las últimas 24h</small>
+                </div>
+            </div>
+
+            <div class="glass-card fade-in" style="animation-delay: 0.55s;">
+                <h3 style="font-size: 1.25rem; font-weight: 500; margin-bottom: 20px;">
+                    🎯 Performance Distribution
+                </h3>
+                <div class="chart-placeholder">
+                    <span style="font-weight: 600;">Gráfico de Distribución</span>
+                    <small style="color: var(--text-tertiary);">Distribución de tiempos de ejecución</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Real-time Chart -->
+        <div class="glass-card fade-in" style="animation-delay: 0.6s;">
+            <h3 style="font-size: 1.25rem; font-weight: 500; margin-bottom: 20px;">
+                🔄 Real-time Analytics
+            </h3>
+            <div class="chart-placeholder">
+                <span style="font-weight: 600;">Gráfico en Tiempo Real</span>
+                <small style="color: var(--text-tertiary);">Métricas actualizándose cada 30 segundos</small>
+            </div>
+        </div>
+
+        <!-- Predictions Section -->
+        <div class="glass-card fade-in" style="animation-delay: 0.65s;">
+            <h3 style="font-size: 1.5rem; font-weight: 500; margin-bottom: 20px;">
+                🔮 Predicciones ML
+            </h3>
+            <div class="prediction-item">
+                <div class="prediction-label">Carga de trabajo próxima hora</div>
+                <div class="prediction-value">~1,450 workflows</div>
+            </div>
+            <div class="prediction-item">
+                <div class="prediction-label">Probabilidad de errores</div>
+                <div class="prediction-value">2.1% (Bajo)</div>
+            </div>
+            <div class="prediction-item">
+                <div class="prediction-label">Tiempo de respuesta promedio</div>
+                <div class="prediction-value">2.1s (-8.7%)</div>
+            </div>
+            <div class="prediction-item">
+                <div class="prediction-label">Recursos necesarios</div>
+                <div class="prediction-value">CPU: 45% | RAM: 2.1GB</div>
+            </div>
+            <div class="prediction-item">
+                <div class="prediction-label">Ahorro estimado semanal</div>
+                <div class="prediction-value">$987.34 (+12%)</div>
+            </div>
+        </div>
+
+        <!-- Anomalies Section -->
+        <div class="glass-container p-4 fade-in" style="animation-delay: 0.7s;">
+            <h3 style="font-size: 1.5rem; font-weight: 500; margin-bottom: 20px;">
+                🚨 Detección de Anomalías
+            </h3>
+            <div class="anomaly-item anomaly-critical">
+                <div class="anomaly-icon">🔴</div>
+                <div class="anomaly-text">
+                    <strong>Spike inusual en tiempo de respuesta</strong><br>
+                    Workflow "Data Processing" tardando 15.3s (normal: 2.1s)
+                </div>
+                <div class="anomaly-time">Hace 5 min</div>
+            </div>
+            <div class="anomaly-item anomaly-warning">
+                <div class="anomaly-icon">🟡</div>
+                <div class="anomaly-text">
+                    <strong>Patrón inusual de errores</strong><br>
+                    Incremento del 300% en errores de conexión API externa
+                </div>
+                <div class="anomaly-time">Hace 12 min</div>
+            </div>
+            <div class="anomaly-item anomaly-info">
+                <div class="anomaly-icon">🔵</div>
+                <div class="anomaly-text">
+                    <strong>Nuevo patrón de uso detectado</strong><br>
+                    Usuario ejecutando workflows cada 30s (nuevo comportamiento)
+                </div>
+                <div class="anomaly-time">Hace 23 min</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showNotification(message, duration = 3000) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                background: var(--surface-primary);
+                backdrop-filter: blur(12px);
+                border: 1px solid var(--border-glass);
+                border-radius: 12px;
+                padding: 16px 24px;
+                box-shadow: var(--shadow-glass);
+                animation: fadeIn 0.3s ease-out;
+                z-index: 1000;
+                color: var(--text-primary);
+                font-family: var(--font-rounded);
+                max-width: 400px;
+            `;
+            notification.innerHTML = message;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), duration);
+        }
+
+        function runAnalysis() {
+            showNotification('🔍 Ejecutando análisis completo de métricas...');
+            // Simular progreso
+            setTimeout(() => showNotification('📊 Análisis 25% completado...'), 1000);
+            setTimeout(() => showNotification('📊 Análisis 50% completado...'), 2000);
+            setTimeout(() => showNotification('📊 Análisis 75% completado...'), 3000);
+            setTimeout(() => showNotification('✅ Análisis completado exitosamente'), 4000);
+        }
+
+        function generateReport() {
+            showNotification('📊 Generando reporte de analytics...');
+            setTimeout(() => showNotification('📄 Reporte generado: analytics_report.pdf'), 2000);
+        }
+
+        function trainModel() {
+            showNotification('🧠 Iniciando entrenamiento de modelos ML...');
+            setTimeout(() => showNotification('⏱️ Tiempo estimado: 15 minutos'), 1500);
+        }
+
+        function exportData() {
+            showNotification('📤 Exportando datos de analytics...');
+            setTimeout(() => showNotification('✅ Datos exportados: analytics_data.json'), 2000);
+        }
+
+        function configureAlerts() {
+            showNotification('🔔 Abriendo configuración de alertas inteligentes...');
+        }
+
+        function optimizePerformance() {
+            showNotification('⚡ Iniciando optimización de performance...');
+            setTimeout(() => showNotification('🔄 Analizando cuellos de botella...'), 1000);
+            setTimeout(() => showNotification('✅ Optimización completada'), 3000);
+        }
+
+        // Simulación de actualización de métricas
+        setInterval(() => {
+            const metricValues = document.querySelectorAll('.metric-value');
+            metricValues.forEach(el => {
+                if (el.textContent.includes('%')) {
+                    const current = parseFloat(el.textContent);
+                    const variation = (Math.random() - 0.5) * 0.2;
+                    el.textContent = (current + variation).toFixed(1) + '%';
+                } else if (el.textContent.includes('s')) {
+                    const current = parseFloat(el.textContent);
+                    const variation = (Math.random() - 0.5) * 0.1;
+                    el.textContent = Math.max(0.1, current + variation).toFixed(1) + 's';
+                }
+            });
+        }, 5000);
+
+        // Inicialización
+        window.onload = function() {
+            console.log('📈 Advanced Analytics Dashboard cargado');
+            console.log('🤖 Modelos ML: Activos');
+            console.log('🔍 Detección de anomalías: Funcionando');
+            console.log('⚡ Optimización automática: Habilitada');
+        };
+    </script>
+</body>
+</html>

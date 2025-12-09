@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>n8n Agent Platform Dashboard</title>
+    <link rel="stylesheet" href="styles/glassmorphism.css">
+    <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Vue-specific overrides for glassmorphism */
+        .dashboard {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .agents-list {
+            max-height: 400px;
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+        }
+        
+        .agents-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .agents-list::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+        
+        .agents-list::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+        }
+        
+        .agent-item {
+            background: var(--surface-secondary);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border-glass);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: var(--transition-smooth);
+        }
+        
+        .agent-item:hover {
+            background: var(--surface-hover);
+            transform: translateX(4px);
+        }
+        
+        .agent-status {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            backdrop-filter: blur(8px);
+        }
+        
+        .agent-status.active {
+            background: rgba(50, 215, 75, 0.15);
+            color: var(--accent-green);
+            border: 1px solid rgba(50, 215, 75, 0.3);
+        }
+        
+        .agent-status.paused {
+            background: rgba(255, 214, 10, 0.15);
+            color: var(--accent-yellow);
+            border: 1px solid rgba(255, 214, 10, 0.3);
+        }
+        
+        .optimization-item {
+            background: var(--surface-secondary);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border-glass);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            transition: var(--transition-smooth);
+        }
+        
+        .optimization-item:hover {
+            background: var(--surface-hover);
+            transform: translateY(-2px);
+        }
+        
+        .optimization-impact {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-top: 8px;
+            backdrop-filter: blur(8px);
+        }
+        
+        .impact-high {
+            background: rgba(255, 69, 58, 0.15);
+            color: var(--accent-red);
+            border: 1px solid rgba(255, 69, 58, 0.3);
+        }
+        
+        .impact-medium {
+            background: rgba(255, 159, 10, 0.15);
+            color: var(--accent-orange);
+            border: 1px solid rgba(255, 159, 10, 0.3);
+        }
+        
+        .impact-low {
+            background: rgba(50, 215, 75, 0.15);
+            color: var(--accent-green);
+            border: 1px solid rgba(50, 215, 75, 0.3);
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+        }
+        
+        .error {
+            background: rgba(255, 69, 58, 0.15);
+            color: var(--accent-red);
+            border: 1px solid rgba(255, 69, 58, 0.3);
+            padding: 16px;
+            border-radius: 12px;
+            margin: 12px 0;
+            backdrop-filter: blur(8px);
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid var(--border-glass);
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        
+        td {
+            padding: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+        }
+        
+        tr:hover td {
+            background: var(--surface-hover);
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="background-wrapper">
+        <div class="gradient-orb"></div>
+        <div class="gradient-orb"></div>
+        <div class="gradient-orb"></div>
+    </div>
+
+    <div id="app">
+        <!-- Navigation -->
+        <nav class="navbar">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <h1 style="font-size: 1.5rem; font-weight: 600;">
+                        🤖 n8n Agent Platform
+                    </h1>
+                </div>
+                <div class="flex gap-2">
+                    <div class="nav-item" :class="{active: connected}">
+                        {{ connected ? '🟢 Connected' : '🔴 Disconnected' }}
+                    </div>
+                    <div class="nav-item">
+                        {{ currentTime }}
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <div class="dashboard">
+            <div class="grid grid-cols-3 gap-3 mb-4">
+                <!-- Metrics Overview -->
+                <div class="glass-card fade-in" style="animation-delay: 0.1s;">
+                    <h3 class="card-title" style="font-size: 1.25rem; font-weight: 500; margin-bottom: 20px;">
+                        📊 Metrics Overview
+                    </h3>
+                    <div v-if="metrics.overview">
+                        <div class="metric" style="margin-bottom: 16px;">
+                            <span class="metric-label">Total Workflows</span>
+                            <span class="metric-value" style="font-size: 2rem;">{{ metrics.overview.totalWorkflows }}</span>
+                        </div>
+                        <div class="metric" style="margin-bottom: 16px;">
+                            <span class="metric-label">Active Workflows</span>
+                            <span class="metric-value" style="font-size: 2rem;">{{ metrics.overview.activeWorkflows }}</span>
+                        </div>
+                        <div class="metric" style="margin-bottom: 16px;">
+                            <span class="metric-label">Success Rate</span>
+                            <span class="metric-value" style="font-size: 2rem; color: var(--accent-green);">{{ metrics.overview.successRate }}%</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Avg Execution Time</span>
+                            <span class="metric-value" style="font-size: 2rem; color: var(--accent-blue);">{{ metrics.overview.avgExecutionTime }}s</span>
+                        </div>
+                    </div>
+                    <div v-else class="loading">
+                        <div class="loading-spinner"></div>
+                        Loading metrics...
+                    </div>
+                </div>
+
+                <!-- Real-time Performance -->
+                <div class="glass-card fade-in" style="animation-delay: 0.2s;">
+                    <h3 class="card-title" style="font-size: 1.25rem; font-weight: 500; margin-bottom: 20px;">
+                        ⚡ Real-time Performance
+                    </h3>
+                    <div v-if="realtimeMetrics">
+                        <div class="metric" style="margin-bottom: 16px;">
+                            <span class="metric-label">CPU Usage</span>
+                            <span class="metric-value" style="font-size: 2rem;">{{ realtimeMetrics.cpu?.toFixed(1) || '0' }}%</span>
+                        </div>
+                        <div class="metric" style="margin-bottom: 16px;">
+                            <span class="metric-label">Memory Usage</span>
+                            <span class="metric-value" style="font-size: 2rem;">{{ realtimeMetrics.memory?.toFixed(1) || '0' }}%</span>
+                        </div>
+                        <div class="metric" style="margin-bottom: 20px;">
+                            <span class="metric-label">Executions/min</span>
+                            <span class="metric-value" style="font-size: 2rem; color: var(--accent-purple);">{{ realtimeMetrics.executionsPerMinute || '0' }}</span>
+                        </div>
+                    </div>
+                    <div class="chart-container" style="height: 200px;">
+                        <canvas id="performanceChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Active Agents -->
+                <div class="glass-card fade-in" style="animation-delay: 0.3s;">
+                    <h3 class="card-title" style="font-size: 1.25rem; font-weight: 500; margin-bottom: 20px;">
+                        🤖 Active Agents
+                    </h3>
+                    <div class="agents-list" v-if="agents.length">
+                        <div v-for="agent in agents" :key="agent.id" class="agent-item">
+                            <div>
+                                <strong style="color: var(--text-primary);">{{ agent.name }}</strong>
+                                <div style="font-size: 0.875rem; color: var(--text-secondary); margin-top: 4px;">
+                                    {{ agent.description }}
+                                </div>
+                            </div>
+                            <span class="agent-status" :class="agent.status">
+                                {{ agent.status }}
+                            </span>
+                        </div>
+                    </div>
+                    <div v-else class="loading">
+                        <div class="loading-spinner"></div>
+                        Loading agents...
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <!-- Optimization Suggestions -->
+                <div class="glass-card fade-in" style="animation-delay: 0.4s;">
+                    <h3 class="card-title" style="font-size: 1.25rem; font-weight: 500; margin-bottom: 20px;">
+                        💡 Optimization Suggestions
+                    </h3>
+                    <div v-if="optimizations.length">
+                        <div v-for="opt in optimizations" :key="opt.id" class="optimization-item">
+                            <strong style="color: var(--text-primary);">{{ opt.title }}</strong>
+                            <div style="font-size: 0.875rem; color: var(--text-secondary); margin: 8px 0;">
+                                {{ opt.description }}
+                            </div>
+                            <span class="optimization-impact" :class="'impact-' + opt.impact">
+                                {{ opt.impact }} impact
+                            </span>
+                            <span style="margin-left: 12px; font-size: 0.875rem; color: var(--accent-green);">
+                                {{ opt.estimatedImprovement }}
+                            </span>
+                        </div>
+                    </div>
+                    <div v-else class="loading">
+                        <div class="loading-spinner"></div>
+                        Loading suggestions...
+                    </div>
+                </div>
+
+                <!-- Recent Workflows -->
+                <div class="glass-card fade-in" style="animation-delay: 0.5s;">
+                    <h3 class="card-title" style="font-size: 1.25rem; font-weight: 500; margin-bottom: 20px;">
+                        📋 Recent Workflows
+                    </h3>
+                    <div v-if="workflows.length">
+                        <div style="overflow-x: auto;">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Status</th>
+                                        <th>Success Rate</th>
+                                        <th>Last Run</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="workflow in workflows.slice(0, 5)" :key="workflow.id">
+                                        <td>{{ workflow.name }}</td>
+                                        <td>
+                                            <span :style="{color: workflow.status === 'active' ? 'var(--accent-green)' : 'var(--text-secondary)'}">
+                                                {{ workflow.status }}
+                                            </span>
+                                        </td>
+                                        <td>{{ workflow.successRate }}%</td>
+                                        <td>{{ formatTime(workflow.lastExecution) }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div v-else class="loading">
+                        <div class="loading-spinner"></div>
+                        Loading workflows...
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="error" class="error fade-in">
+                <strong>Error:</strong> {{ error }}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    connected: false,
+                    currentTime: '',
+                    metrics: {},
+                    realtimeMetrics: {},
+                    agents: [],
+                    workflows: [],
+                    optimizations: [],
+                    error: null,
+                    socket: null,
+                    chart: null
+                }
+            },
+            mounted() {
+                this.updateTime();
+                setInterval(this.updateTime, 1000);
+                this.connectSocket();
+                this.fetchData();
+                this.initChart();
+            },
+            methods: {
+                updateTime() {
+                    this.currentTime = new Date().toLocaleTimeString();
+                },
+                connectSocket() {
+                    this.socket = io('http://localhost:3456');
+                    
+                    this.socket.on('connect', () => {
+                        this.connected = true;
+                        console.log('Connected to server');
+                    });
+                    
+                    this.socket.on('disconnect', () => {
+                        this.connected = false;
+                        console.log('Disconnected from server');
+                    });
+                    
+                    this.socket.on('metrics:update', (data) => {
+                        this.realtimeMetrics = data;
+                        this.updateChart(data);
+                    });
+                    
+                    this.socket.on('workflow:event', (event) => {
+                        console.log('Workflow event:', event);
+                    });
+                },
+                async fetchData() {
+                    try {
+                        const [metricsRes, agentsRes, workflowsRes, optimizationsRes] = await Promise.all([
+                            axios.get('http://localhost:3456/api/metrics'),
+                            axios.get('http://localhost:3456/api/agents'),
+                            axios.get('http://localhost:3456/api/workflows'),
+                            axios.get('http://localhost:3456/api/optimizations')
+                        ]);
+                        
+                        this.metrics = metricsRes.data;
+                        this.agents = agentsRes.data;
+                        this.workflows = workflowsRes.data;
+                        this.optimizations = optimizationsRes.data;
+                    } catch (err) {
+                        this.error = err.message;
+                        console.error('Failed to fetch data:', err);
+                    }
+                },
+                initChart() {
+                    const ctx = document.getElementById('performanceChart').getContext('2d');
+                    const gradient1 = ctx.createLinearGradient(0, 0, 0, 200);
+                    gradient1.addColorStop(0, 'rgba(10, 132, 255, 0.3)');
+                    gradient1.addColorStop(1, 'rgba(10, 132, 255, 0)');
+                    
+                    const gradient2 = ctx.createLinearGradient(0, 0, 0, 200);
+                    gradient2.addColorStop(0, 'rgba(191, 90, 242, 0.3)');
+                    gradient2.addColorStop(1, 'rgba(191, 90, 242, 0)');
+                    
+                    this.chart = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: Array(20).fill(''),
+                            datasets: [{
+                                label: 'CPU %',
+                                data: Array(20).fill(0),
+                                borderColor: '#0A84FF',
+                                backgroundColor: gradient1,
+                                tension: 0.4,
+                                borderWidth: 2,
+                                pointRadius: 0
+                            }, {
+                                label: 'Memory %',
+                                data: Array(20).fill(0),
+                                borderColor: '#BF5AF2',
+                                backgroundColor: gradient2,
+                                tension: 0.4,
+                                borderWidth: 2,
+                                pointRadius: 0
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    max: 100,
+                                    grid: {
+                                        color: 'rgba(255, 255, 255, 0.05)'
+                                    },
+                                    ticks: {
+                                        color: 'rgba(255, 255, 255, 0.52)'
+                                    }
+                                },
+                                x: {
+                                    grid: {
+                                        display: false
+                                    },
+                                    ticks: {
+                                        display: false
+                                    }
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    display: true,
+                                    position: 'top',
+                                    labels: {
+                                        color: 'rgba(255, 255, 255, 0.72)',
+                                        font: {
+                                            family: "'Gloria Hallelujah', sans-serif",
+                                            size: 12
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                },
+                updateChart(data) {
+                    if (this.chart) {
+                        this.chart.data.labels.push('');
+                        this.chart.data.labels.shift();
+                        
+                        this.chart.data.datasets[0].data.push(data.cpu || 0);
+                        this.chart.data.datasets[0].data.shift();
+                        
+                        this.chart.data.datasets[1].data.push(data.memory || 0);
+                        this.chart.data.datasets[1].data.shift();
+                        
+                        this.chart.update('none');
+                    }
+                },
+                formatTime(timestamp) {
+                    const date = new Date(timestamp);
+                    const now = new Date();
+                    const diff = now - date;
+                    
+                    if (diff < 60000) return 'Just now';
+                    if (diff < 3600000) return Math.floor(diff / 60000) + ' min ago';
+                    if (diff < 86400000) return Math.floor(diff / 3600000) + ' hours ago';
+                    return date.toLocaleDateString();
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

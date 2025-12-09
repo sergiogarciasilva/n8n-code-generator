@@ -1,0 +1,704 @@
+{
+  "meta": {
+    "instanceId": "workflow-generator-003"
+  },
+  "id": "telegram-advanced-bot",
+  "name": "Advanced Telegram Bot with AI Integration",
+  "description": "Comprehensive Telegram bot with command handling, inline keyboards, media processing, and AI responses using OpenAI GPT",
+  "version": "1.0.0",
+  "n8n_version": "v1.x.x",
+  "author": "n8n Agent Platform",
+  "created_date": "2025-06-27",
+  "category": "communication",
+  "subcategory": "telegram-bot",
+  "tags": ["telegram", "bot", "ai", "openai", "commands", "media", "intermediate"],
+  "difficulty": "intermediate",
+  "execution_type": "webhook-triggered",
+  "resource_requirements": "medium-resource",
+  "security_level": "internal",
+  "estimated_execution_time": "2-10 seconds",
+  "dependencies": [
+    {
+      "type": "credential",
+      "service": "Telegram Bot",
+      "required": true
+    },
+    {
+      "type": "api_key",
+      "service": "OpenAI",
+      "required": true
+    }
+  ],
+  "webhook_config": {
+    "method": "POST",
+    "path": "/webhook/telegram-bot",
+    "authentication": "none"
+  },
+  "workflow": {
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "/webhook/telegram-bot",
+          "options": {}
+        },
+        "id": "telegram-webhook",
+        "name": "Telegram Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 1,
+        "position": [240, 300]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Parse Telegram webhook data\nconst telegramData = $input.first().json;\n\n// Extract message information\nconst message = telegramData.message || telegramData.callback_query?.message;\nconst callbackQuery = telegramData.callback_query;\nconst inlineQuery = telegramData.inline_query;\n\nif (!message && !callbackQuery && !inlineQuery) {\n  return [{ json: { error: 'No valid Telegram data' } }];\n}\n\n// Process different types of updates\nlet processedData = {\n  update_id: telegramData.update_id,\n  chat_id: message?.chat?.id || callbackQuery?.message?.chat?.id,\n  user_id: message?.from?.id || callbackQuery?.from?.id,\n  username: message?.from?.username || callbackQuery?.from?.username,\n  first_name: message?.from?.first_name || callbackQuery?.from?.first_name,\n  update_type: 'message'\n};\n\nif (callbackQuery) {\n  processedData.update_type = 'callback_query';\n  processedData.callback_data = callbackQuery.data;\n  processedData.callback_id = callbackQuery.id;\n} else if (inlineQuery) {\n  processedData.update_type = 'inline_query';\n  processedData.query = inlineQuery.query;\n  processedData.inline_query_id = inlineQuery.id;\n} else if (message) {\n  processedData.message_text = message.text;\n  processedData.message_id = message.message_id;\n  processedData.date = message.date;\n  \n  // Handle different message types\n  if (message.photo) {\n    processedData.message_type = 'photo';\n    processedData.photo = message.photo;\n  } else if (message.document) {\n    processedData.message_type = 'document';\n    processedData.document = message.document;\n  } else if (message.voice) {\n    processedData.message_type = 'voice';\n    processedData.voice = message.voice;\n  } else if (message.video) {\n    processedData.message_type = 'video';\n    processedData.video = message.video;\n  } else {\n    processedData.message_type = 'text';\n  }\n  \n  // Extract command if present\n  if (message.text && message.text.startsWith('/')) {\n    const commandMatch = message.text.match(/^\\/([a-zA-Z0-9_]+)(@\\w+)?\\s*(.*)/);\n    if (commandMatch) {\n      processedData.command = commandMatch[1];\n      processedData.command_args = commandMatch[3] || '';\n    }\n  }\n}\n\nreturn [{ json: processedData }];"
+        },
+        "id": "parse-telegram-data",
+        "name": "Parse Telegram Data",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [460, 300]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": false,
+              "leftValue": "",
+              "typeValidation": "strict"
+            },
+            "conditions": [
+              {
+                "id": "command-condition",
+                "leftValue": "={{ $json.update_type }}",
+                "rightValue": "message",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              },
+              {
+                "id": "has-command",
+                "leftValue": "={{ $json.command }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "exists"
+                }
+              }
+            ],
+            "combinator": "and"
+          }
+        },
+        "id": "check-command",
+        "name": "Check for Command",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2,
+        "position": [680, 300]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": false,
+              "leftValue": "",
+              "typeValidation": "strict"
+            },
+            "conditions": [
+              {
+                "id": "start-command",
+                "leftValue": "={{ $json.command }}",
+                "rightValue": "start",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "or"
+          }
+        },
+        "id": "route-commands",
+        "name": "Route Commands",
+        "type": "n8n-nodes-base.switch",
+        "typeVersion": 3,
+        "position": [900, 200]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Generate welcome message with inline keyboard\nconst userData = $input.first().json;\n\nconst welcomeMessage = {\n  chat_id: userData.chat_id,\n  text: `🤖 ¡Hola ${userData.first_name || 'usuario'}! \n\nSoy tu asistente AI inteligente. Puedo ayudarte con:\n\n🔹 Responder preguntas usando IA\n🔹 Procesar imágenes y documentos\n🔹 Ejecutar comandos útiles\n🔹 Proporcionar información en tiempo real\n\n¿En qué puedo ayudarte hoy?`,\n  reply_markup: {\n    inline_keyboard: [\n      [\n        { text: \"🧠 Pregunta a la IA\", callback_data: \"ask_ai\" },\n        { text: \"📸 Analizar imagen\", callback_data: \"analyze_image\" }\n      ],\n      [\n        { text: \"📋 Ver comandos\", callback_data: \"show_commands\" },\n        { text: \"⚙️ Configuración\", callback_data: \"settings\" }\n      ],\n      [\n        { text: \"❓ Ayuda\", callback_data: \"help\" }\n      ]\n    ]\n  }\n};\n\nreturn [{ json: welcomeMessage }];"
+        },
+        "id": "welcome-message",
+        "name": "Generate Welcome Message",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [1120, 160]
+      },
+      {
+        "parameters": {
+          "resource": "message",
+          "operation": "sendMessage",
+          "chatId": "={{ $json.chat_id }}",
+          "text": "={{ $json.text }}",
+          "additionalFields": {
+            "reply_markup": "={{ JSON.stringify($json.reply_markup) }}"
+          }
+        },
+        "id": "send-welcome",
+        "name": "Send Welcome Message",
+        "type": "n8n-nodes-base.telegram",
+        "typeVersion": 1,
+        "position": [1340, 160]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": false,
+              "leftValue": "",
+              "typeValidation": "strict"
+            },
+            "conditions": [
+              {
+                "id": "callback-condition",
+                "leftValue": "={{ $json.update_type }}",
+                "rightValue": "callback_query",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          }
+        },
+        "id": "check-callback",
+        "name": "Check for Callback",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2,
+        "position": [680, 420]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": false,
+              "leftValue": "",
+              "typeValidation": "strict"
+            },
+            "conditions": [
+              {
+                "id": "ask-ai-callback",
+                "leftValue": "={{ $json.callback_data }}",
+                "rightValue": "ask_ai",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "or"
+          }
+        },
+        "id": "route-callbacks",
+        "name": "Route Callbacks",
+        "type": "n8n-nodes-base.switch",
+        "typeVersion": 3,
+        "position": [900, 420]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Prepare AI query message\nconst userData = $input.first().json;\n\nconst queryMessage = {\n  chat_id: userData.chat_id,\n  text: \"🤔 ¿Qué te gustaría preguntarle a la IA?\\n\\nPuedes preguntar sobre cualquier tema:\n\\n• Información general\n• Explicaciones técnicas\n• Consejos y recomendaciones\n• Análisis de datos\n• Y mucho más...\n\n💭 Escribe tu pregunta:\",\n  reply_markup: {\n    force_reply: true,\n    input_field_placeholder: \"Escribe tu pregunta aquí...\"\n  }\n};\n\n// Also answer the callback query\nconst callbackAnswer = {\n  callback_query_id: userData.callback_id,\n  text: \"🧠 Modo IA activado\"\n};\n\nreturn [\n  { json: queryMessage },\n  { json: callbackAnswer }\n];"
+        },
+        "id": "ai-query-prompt",
+        "name": "AI Query Prompt",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [1120, 380]
+      },
+      {
+        "parameters": {
+          "resource": "message",
+          "operation": "sendMessage",
+          "chatId": "={{ $json.chat_id }}",
+          "text": "={{ $json.text }}",
+          "additionalFields": {
+            "reply_markup": "={{ JSON.stringify($json.reply_markup) }}"
+          }
+        },
+        "id": "send-ai-prompt",
+        "name": "Send AI Prompt",
+        "type": "n8n-nodes-base.telegram",
+        "typeVersion": 1,
+        "position": [1340, 380]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": false,
+              "leftValue": "",
+              "typeValidation": "strict"
+            },
+            "conditions": [
+              {
+                "id": "text-message",
+                "leftValue": "={{ $json.update_type }}",
+                "rightValue": "message",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              },
+              {
+                "id": "no-command",
+                "leftValue": "={{ $json.command }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "notExists"
+                }
+              },
+              {
+                "id": "has-text",
+                "leftValue": "={{ $json.message_text }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "exists"
+                }
+              }
+            ],
+            "combinator": "and"
+          }
+        },
+        "id": "check-text-message",
+        "name": "Check Text Message",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2,
+        "position": [680, 540]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Prepare context for OpenAI\nconst userData = $input.first().json;\n\nconst aiContext = {\n  user_message: userData.message_text,\n  user_name: userData.first_name || userData.username || 'Usuario',\n  chat_id: userData.chat_id,\n  timestamp: new Date().toISOString()\n};\n\nreturn [{ json: aiContext }];"
+        },
+        "id": "prepare-ai-context",
+        "name": "Prepare AI Context",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [900, 540]
+      },
+      {
+        "parameters": {
+          "resource": "chat",
+          "operation": "complete",
+          "model": {
+            "__rl": true,
+            "value": "gpt-3.5-turbo",
+            "mode": "list"
+          },
+          "messages": {
+            "messageValues": [
+              {
+                "role": "system",
+                "content": "Eres un asistente AI útil y amigable en un bot de Telegram. Responde de manera clara, concisa y útil. Usa emojis apropiados para hacer las respuestas más atractivas. Mantén un tono conversacional y profesional. Si no sabes algo, admítelo honestamente."
+              },
+              {
+                "role": "user",
+                "content": "={{ $json.user_message }}"
+              }
+            ]
+          },
+          "options": {
+            "temperature": 0.7,
+            "maxTokens": 1000
+          }
+        },
+        "id": "openai-response",
+        "name": "Generate AI Response",
+        "type": "@n8n/n8n-nodes-langchain.openAi",
+        "typeVersion": 1,
+        "position": [1120, 540]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Format AI response for Telegram\nconst aiData = $input.first().json;\nconst originalData = $('Prepare AI Context').first().json;\n\nconst aiResponse = aiData.choices?.[0]?.message?.content || 'Lo siento, no pude generar una respuesta en este momento.';\n\nconst responseMessage = {\n  chat_id: originalData.chat_id,\n  text: `🤖 **Respuesta AI:**\\n\\n${aiResponse}`,\n  parse_mode: 'Markdown',\n  reply_markup: {\n    inline_keyboard: [\n      [\n        { text: \"🔄 Nueva pregunta\", callback_data: \"ask_ai\" },\n        { text: \"👍 Útil\", callback_data: \"rate_good\" }\n      ],\n      [\n        { text: \"🏠 Menú principal\", callback_data: \"main_menu\" }\n      ]\n    ]\n  }\n};\n\nreturn [{ json: responseMessage }];"
+        },
+        "id": "format-ai-response",
+        "name": "Format AI Response",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [1340, 540]
+      },
+      {
+        "parameters": {
+          "resource": "message",
+          "operation": "sendMessage",
+          "chatId": "={{ $json.chat_id }}",
+          "text": "={{ $json.text }}",
+          "additionalFields": {
+            "parse_mode": "={{ $json.parse_mode }}",
+            "reply_markup": "={{ JSON.stringify($json.reply_markup) }}"
+          }
+        },
+        "id": "send-ai-response",
+        "name": "Send AI Response",
+        "type": "n8n-nodes-base.telegram",
+        "typeVersion": 1,
+        "position": [1560, 540]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": false,
+              "leftValue": "",
+              "typeValidation": "strict"
+            },
+            "conditions": [
+              {
+                "id": "media-message",
+                "leftValue": "={{ $json.message_type }}",
+                "rightValue": "text",
+                "operator": {
+                  "type": "string",
+                  "operation": "notEquals"
+                }
+              }
+            ],
+            "combinator": "and"
+          }
+        },
+        "id": "check-media",
+        "name": "Check Media Message",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2,
+        "position": [680, 660]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Handle media messages\nconst userData = $input.first().json;\n\nlet responseText = \"📎 He recibido tu archivo. \";\nlet processingType = \"unknown\";\n\nswitch (userData.message_type) {\n  case 'photo':\n    responseText = \"📸 ¡Excelente foto! Puedo analizarla usando IA. \";\n    processingType = \"image_analysis\";\n    break;\n  case 'document':\n    responseText = \"📄 Documento recibido. Puedo procesarlo si es compatible. \";\n    processingType = \"document_processing\";\n    break;\n  case 'voice':\n    responseText = \"🎤 Audio recibido. Puedo transcribirlo usando IA. \";\n    processingType = \"voice_transcription\";\n    break;\n  case 'video':\n    responseText = \"🎥 Video recibido. Puedo extraer información del contenido. \";\n    processingType = \"video_analysis\";\n    break;\n}\n\nconst mediaResponse = {\n  chat_id: userData.chat_id,\n  text: responseText + \"\\n\\n¿Qué te gustaría hacer?\",\n  reply_markup: {\n    inline_keyboard: [\n      [\n        { text: \"🔍 Analizar con IA\", callback_data: `analyze_${processingType}` },\n        { text: \"📊 Obtener info\", callback_data: `info_${processingType}` }\n      ],\n      [\n        { text: \"🏠 Menú principal\", callback_data: \"main_menu\" }\n      ]\n    ]\n  }\n};\n\nreturn [{ json: mediaResponse }];"
+        },
+        "id": "handle-media",
+        "name": "Handle Media Message",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [900, 660]
+      },
+      {
+        "parameters": {
+          "resource": "message",
+          "operation": "sendMessage",
+          "chatId": "={{ $json.chat_id }}",
+          "text": "={{ $json.text }}",
+          "additionalFields": {
+            "reply_markup": "={{ JSON.stringify($json.reply_markup) }}"
+          }
+        },
+        "id": "send-media-response",
+        "name": "Send Media Response",
+        "type": "n8n-nodes-base.telegram",
+        "typeVersion": 1,
+        "position": [1120, 660]
+      }
+    ],
+    "connections": {
+      "Telegram Webhook": {
+        "main": [
+          [
+            {
+              "node": "Parse Telegram Data",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Parse Telegram Data": {
+        "main": [
+          [
+            {
+              "node": "Check for Command",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Check for Callback",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Check Text Message",
+              "type": "main",
+              "index": 0
+            },
+            {
+              "node": "Check Media Message",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Check for Command": {
+        "main": [
+          [
+            {
+              "node": "Route Commands",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Route Commands": {
+        "main": [
+          [
+            {
+              "node": "Generate Welcome Message",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Generate Welcome Message": {
+        "main": [
+          [
+            {
+              "node": "Send Welcome Message",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Check for Callback": {
+        "main": [
+          [
+            {
+              "node": "Route Callbacks",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Route Callbacks": {
+        "main": [
+          [
+            {
+              "node": "AI Query Prompt",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "AI Query Prompt": {
+        "main": [
+          [
+            {
+              "node": "Send AI Prompt",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Check Text Message": {
+        "main": [
+          [
+            {
+              "node": "Prepare AI Context",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prepare AI Context": {
+        "main": [
+          [
+            {
+              "node": "Generate AI Response",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Generate AI Response": {
+        "main": [
+          [
+            {
+              "node": "Format AI Response",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Format AI Response": {
+        "main": [
+          [
+            {
+              "node": "Send AI Response",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Check Media Message": {
+        "main": [
+          [
+            {
+              "node": "Handle Media Message",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Handle Media Message": {
+        "main": [
+          [
+            {
+              "node": "Send Media Response",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "pinData": {}
+  },
+  "usage_examples": [
+    {
+      "title": "Start Command",
+      "description": "User sends /start command to initiate bot interaction",
+      "payload": {
+        "update_id": 123456,
+        "message": {
+          "message_id": 1,
+          "from": {
+            "id": 987654321,
+            "first_name": "John",
+            "username": "johndoe"
+          },
+          "chat": {
+            "id": 987654321,
+            "type": "private"
+          },
+          "date": 1640995200,
+          "text": "/start"
+        }
+      }
+    },
+    {
+      "title": "AI Question",
+      "description": "User asks a question for AI processing",
+      "payload": {
+        "update_id": 123457,
+        "message": {
+          "message_id": 2,
+          "from": {
+            "id": 987654321,
+            "first_name": "John",
+            "username": "johndoe"
+          },
+          "chat": {
+            "id": 987654321,
+            "type": "private"
+          },
+          "date": 1640995260,
+          "text": "What is artificial intelligence?"
+        }
+      }
+    },
+    {
+      "title": "Callback Query",
+      "description": "User clicks on inline keyboard button",
+      "payload": {
+        "update_id": 123458,
+        "callback_query": {
+          "id": "callback123",
+          "from": {
+            "id": 987654321,
+            "first_name": "John",
+            "username": "johndoe"
+          },
+          "message": {
+            "message_id": 3,
+            "chat": {
+              "id": 987654321,
+              "type": "private"
+            }
+          },
+          "data": "ask_ai"
+        }
+      }
+    }
+  ],
+  "testing": {
+    "test_cases": [
+      {
+        "name": "start_command",
+        "input": {
+          "message": {
+            "text": "/start",
+            "from": { "id": 123, "first_name": "Test" },
+            "chat": { "id": 123 }
+          }
+        },
+        "expected_response": {
+          "text_contains": "Hola Test"
+        }
+      },
+      {
+        "name": "ai_question",
+        "input": {
+          "message": {
+            "text": "What is 2+2?",
+            "from": { "id": 123, "first_name": "Test" },
+            "chat": { "id": 123 }
+          }
+        },
+        "expected_response": {
+          "text_contains": "Respuesta AI"
+        }
+      }
+    ]
+  },
+  "configuration": {
+    "required_credentials": [
+      {
+        "name": "Telegram Bot Token",
+        "type": "telegram",
+        "description": "Required for Telegram bot API access"
+      },
+      {
+        "name": "OpenAI API Key",
+        "type": "openai",
+        "description": "Required for AI response generation"
+      }
+    ],
+    "webhook_setup": {
+      "telegram_webhook_url": "https://your-domain.com/webhook/telegram-bot",
+      "setup_command": "https://api.telegram.org/bot<TOKEN>/setWebhook?url=<WEBHOOK_URL>"
+    },
+    "environment_variables": [
+      {
+        "name": "TELEGRAM_BOT_TOKEN",
+        "description": "Your Telegram bot token from @BotFather",
+        "required": true
+      },
+      {
+        "name": "OPENAI_API_KEY",
+        "description": "Your OpenAI API key",
+        "required": true
+      }
+    ]
+  }
+}

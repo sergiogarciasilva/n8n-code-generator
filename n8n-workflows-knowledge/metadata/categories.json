@@ -1,0 +1,122 @@
+{
+  "categories": {
+    "automation": {
+      "name": "Automation",
+      "description": "Workflows for task automation and process optimization",
+      "icon": "🤖",
+      "subcategories": [
+        "email-automation",
+        "file-processing",
+        "social-media",
+        "scheduling",
+        "notifications"
+      ],
+      "common_nodes": ["Cron", "Email", "HTTP Request", "Code", "IF"]
+    },
+    "integration": {
+      "name": "Integration",
+      "description": "Workflows for connecting different systems and APIs",
+      "icon": "🔗",
+      "subcategories": [
+        "crm-integration",
+        "database-sync",
+        "api-orchestration",
+        "cloud-services",
+        "enterprise-systems"
+      ],
+      "common_nodes": ["HTTP Request", "Webhook", "MySQL", "PostgreSQL", "Airtable"]
+    },
+    "ai-ml": {
+      "name": "AI & Machine Learning",
+      "description": "Workflows utilizing AI models and machine learning capabilities",
+      "icon": "🧠",
+      "subcategories": [
+        "llm-automation",
+        "image-processing",
+        "text-analysis",
+        "prediction-models",
+        "chatbots"
+      ],
+      "common_nodes": ["OpenAI", "AI Chat", "Anthropic", "Code", "HTTP Request"]
+    },
+    "data-processing": {
+      "name": "Data Processing",
+      "description": "Workflows for data transformation, analysis, and reporting",
+      "icon": "📊",
+      "subcategories": [
+        "etl-pipelines",
+        "data-validation",
+        "reporting",
+        "analytics",
+        "data-migration"
+      ],
+      "common_nodes": ["Code", "Set", "Merge", "Sort", "Filter"]
+    },
+    "communication": {
+      "name": "Communication",
+      "description": "Workflows for messaging, notifications, and communication automation",
+      "icon": "💬",
+      "subcategories": [
+        "chat-automation",
+        "email-campaigns",
+        "sms-alerts",
+        "social-posting",
+        "customer-support"
+      ],
+      "common_nodes": ["Telegram", "Slack", "Email", "WhatsApp", "Discord"]
+    },
+    "monitoring": {
+      "name": "Monitoring & Alerting",
+      "description": "Workflows for system monitoring, health checks, and alerting",
+      "icon": "🔍",
+      "subcategories": [
+        "health-monitoring",
+        "performance-tracking",
+        "error-alerting",
+        "uptime-monitoring",
+        "log-analysis"
+      ],
+      "common_nodes": ["HTTP Request", "Cron", "Email", "Slack", "Code"]
+    },
+    "enterprise": {
+      "name": "Enterprise",
+      "description": "Advanced workflows for enterprise environments and compliance",
+      "icon": "🏢",
+      "subcategories": [
+        "compliance-automation",
+        "security-workflows",
+        "approval-processes",
+        "audit-trails",
+        "governance"
+      ],
+      "common_nodes": ["HTTP Request", "Database", "Email", "Code", "Webhook"]
+    }
+  },
+  "tags": {
+    "difficulty_levels": [
+      "beginner",
+      "intermediate", 
+      "advanced",
+      "expert"
+    ],
+    "execution_types": [
+      "manual",
+      "scheduled",
+      "webhook-triggered",
+      "event-driven",
+      "continuous"
+    ],
+    "resource_requirements": [
+      "low-resource",
+      "medium-resource", 
+      "high-resource",
+      "gpu-required"
+    ],
+    "security_levels": [
+      "public",
+      "internal",
+      "confidential",
+      "restricted"
+    ]
+  }
+}

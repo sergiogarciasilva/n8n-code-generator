@@ -1,0 +1,220 @@
+{
+  "meta": {
+    "instanceId": "workflow-generator-001"
+  },
+  "id": "email-automation-basic",
+  "name": "Basic Email Automation",
+  "description": "Sends automated welcome emails to new users with personalized content",
+  "version": "1.0.0",
+  "n8n_version": "v1.x.x",
+  "author": "n8n Agent Platform",
+  "created_date": "2025-06-27",
+  "category": "automation",
+  "subcategory": "email-automation",
+  "tags": ["email", "automation", "welcome", "beginner"],
+  "difficulty": "beginner",
+  "execution_type": "webhook-triggered",
+  "resource_requirements": "low-resource",
+  "security_level": "internal",
+  "estimated_execution_time": "2-5 seconds",
+  "dependencies": [],
+  "webhook_config": {
+    "method": "POST",
+    "path": "/webhook/new-user",
+    "authentication": "none"
+  },
+  "workflow": {
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "/webhook/new-user",
+          "options": {}
+        },
+        "id": "webhook-trigger",
+        "name": "New User Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 1,
+        "position": [240, 300]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict"
+            },
+            "conditions": [
+              {
+                "id": "email-validation",
+                "leftValue": "={{ $json.email }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "exists"
+                }
+              },
+              {
+                "id": "name-validation", 
+                "leftValue": "={{ $json.name }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "exists"
+                }
+              }
+            ],
+            "combinator": "and"
+          }
+        },
+        "id": "validate-data",
+        "name": "Validate User Data",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2,
+        "position": [460, 300]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Generate personalized welcome email content\nconst userData = $input.first();\n\nconst emailContent = {\n  subject: `Welcome to our platform, ${userData.json.name}!`,\n  html: `\n    <h1>Welcome ${userData.json.name}!</h1>\n    <p>Thank you for joining our platform. We're excited to have you on board!</p>\n    <p>Your account has been successfully created with email: ${userData.json.email}</p>\n    <h2>Next Steps:</h2>\n    <ul>\n      <li>Complete your profile setup</li>\n      <li>Explore our features</li>\n      <li>Join our community</li>\n    </ul>\n    <p>If you have any questions, feel free to reach out to our support team.</p>\n    <p>Best regards,<br>The Platform Team</p>\n  `,\n  text: `Welcome ${userData.json.name}! Thank you for joining our platform. Your account: ${userData.json.email}`\n};\n\nreturn [{\n  json: {\n    ...userData.json,\n    emailContent\n  }\n}];"
+        },
+        "id": "generate-content",
+        "name": "Generate Email Content", 
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [680, 280]
+      },
+      {
+        "parameters": {
+          "fromEmail": "noreply@yourplatform.com",
+          "toEmail": "={{ $json.email }}",
+          "subject": "={{ $json.emailContent.subject }}",
+          "emailType": "html",
+          "message": "={{ $json.emailContent.html }}",
+          "options": {
+            "appendN8nAttribution": false
+          }
+        },
+        "id": "send-email",
+        "name": "Send Welcome Email",
+        "type": "n8n-nodes-base.emailSend",
+        "typeVersion": 2,
+        "position": [900, 280]
+      },
+      {
+        "parameters": {
+          "respondWith": "json",
+          "responseCode": 200,
+          "responseBody": "{\n  \"status\": \"success\",\n  \"message\": \"Welcome email sent successfully\",\n  \"user_email\": \"{{ $('New User Webhook').first().json.email }}\"\n}"
+        },
+        "id": "success-response",
+        "name": "Success Response",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1,
+        "position": [1120, 280]
+      },
+      {
+        "parameters": {
+          "respondWith": "json",
+          "responseCode": 400,
+          "responseBody": "{\n  \"status\": \"error\",\n  \"message\": \"Invalid user data - email and name are required\"\n}"
+        },
+        "id": "error-response",
+        "name": "Error Response", 
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1,
+        "position": [680, 400]
+      }
+    ],
+    "connections": {
+      "New User Webhook": {
+        "main": [
+          [
+            {
+              "node": "Validate User Data",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Validate User Data": {
+        "main": [
+          [
+            {
+              "node": "Generate Email Content",
+              "type": "main", 
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Error Response",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Generate Email Content": {
+        "main": [
+          [
+            {
+              "node": "Send Welcome Email",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Send Welcome Email": {
+        "main": [
+          [
+            {
+              "node": "Success Response", 
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "pinData": {}
+  },
+  "usage_examples": [
+    {
+      "title": "New User Registration",
+      "description": "Trigger when a user registers on your website",
+      "payload": {
+        "email": "user@example.com",
+        "name": "John Doe",
+        "registration_date": "2025-06-27T23:45:00Z"
+      }
+    }
+  ],
+  "testing": {
+    "test_cases": [
+      {
+        "name": "valid_user_data",
+        "input": {
+          "email": "test@example.com",
+          "name": "Test User"
+        },
+        "expected_response": {
+          "status": "success",
+          "message": "Welcome email sent successfully"
+        }
+      },
+      {
+        "name": "missing_email",
+        "input": {
+          "name": "Test User"
+        },
+        "expected_response": {
+          "status": "error",
+          "message": "Invalid user data - email and name are required"
+        }
+      }
+    ]
+  }
+}

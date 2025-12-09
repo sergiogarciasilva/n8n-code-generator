@@ -1,0 +1,101 @@
+{
+  "n8n_versions": {
+    "v0.191.x": {
+      "range": ">=0.191.0 <0.206.0",
+      "release_date": "2023-04-15",
+      "major_features": [
+        "AI nodes",
+        "Enhanced webhook security",
+        "New database nodes"
+      ],
+      "breaking_changes": [
+        "Webhook URL format changed",
+        "Node parameter structure updates"
+      ],
+      "supported_nodes": {
+        "core": 200,
+        "community": 450,
+        "ai_nodes": 15
+      }
+    },
+    "v0.206.x": {
+      "range": ">=0.206.0 <1.0.0",
+      "release_date": "2023-09-20",
+      "major_features": [
+        "Enhanced AI integration",
+        "Advanced workflow templates",
+        "Performance improvements",
+        "New enterprise features"
+      ],
+      "breaking_changes": [
+        "Legacy node deprecations",
+        "API endpoint changes"
+      ],
+      "supported_nodes": {
+        "core": 220,
+        "community": 500,
+        "ai_nodes": 25
+      }
+    },
+    "v1.x.x": {
+      "range": ">=1.0.0",
+      "release_date": "2024-01-15",
+      "major_features": [
+        "Complete UI overhaul",
+        "Advanced AI workflow builder",
+        "Enterprise security enhancements",
+        "Cloud-native features"
+      ],
+      "breaking_changes": [
+        "Legacy authentication removed",
+        "Old workflow format deprecated"
+      ],
+      "supported_nodes": {
+        "core": 250,
+        "community": 600,
+        "ai_nodes": 40
+      }
+    }
+  },
+  "node_compatibility": {
+    "AI_Chat": {
+      "introduced_in": "v0.191.0",
+      "deprecated_in": null,
+      "replacements": []
+    },
+    "OpenAI": {
+      "introduced_in": "v0.180.0",
+      "deprecated_in": null,
+      "replacements": []
+    },
+    "Webhook": {
+      "introduced_in": "v0.100.0",
+      "deprecated_in": null,
+      "breaking_changes": {
+        "v0.191.0": "URL format changed"
+      }
+    },
+    "HTTP_Request": {
+      "introduced_in": "v0.050.0",
+      "deprecated_in": null,
+      "replacements": []
+    }
+  },
+  "migration_guides": {
+    "v0.191.x_to_v0.206.x": {
+      "automatic": true,
+      "manual_steps": [
+        "Update webhook URLs",
+        "Review AI node configurations"
+      ]
+    },
+    "v0.206.x_to_v1.x.x": {
+      "automatic": false,
+      "manual_steps": [
+        "Migrate authentication methods",
+        "Update workflow triggers",
+        "Review enterprise features"
+      ]
+    }
+  }
+}

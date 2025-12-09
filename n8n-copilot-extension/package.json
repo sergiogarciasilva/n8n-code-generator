@@ -1,0 +1,145 @@
+{
+  "name": "n8n-copilot-extension",
+  "displayName": "n8n Copilot - Workflow Assistant",
+  "description": "GitHub Copilot for n8n workflows - AI-powered suggestions, validation, and execution",
+  "version": "0.0.1",
+  "publisher": "n8n-copilot",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other",
+    "Programming Languages",
+    "Snippets",
+    "Linters"
+  ],
+  "keywords": [
+    "n8n",
+    "workflow",
+    "automation",
+    "copilot",
+    "ai",
+    "mcp",
+    "telegram",
+    "agents"
+  ],
+  "activationEvents": [
+    "onLanguage:json",
+    "workspaceContains:**/*.n8n.json",
+    "onCommand:n8n.createWorkflow"
+  ],
+  "main": "./out/extension/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "n8n.createWorkflow",
+        "title": "n8n: Create Workflow from Description"
+      },
+      {
+        "command": "n8n.validateWorkflow",
+        "title": "n8n: Validate Current Workflow"
+      },
+      {
+        "command": "n8n.executeWorkflow",
+        "title": "n8n: Execute Workflow"
+      },
+      {
+        "command": "n8n.openVisualEditor",
+        "title": "n8n: Open Visual Editor"
+      },
+      {
+        "command": "n8n.generateTests",
+        "title": "n8n: Generate Tests"
+      }
+    ],
+    "configuration": {
+      "title": "n8n Copilot",
+      "properties": {
+        "n8n.cloudApiUrl": {
+          "type": "string",
+          "default": "https://app.n8n.cloud/api/v1/",
+          "description": "n8n Cloud API URL"
+        },
+        "n8n.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "n8n Cloud API Key"
+        },
+        "n8n.openaiApiKey": {
+          "type": "string",
+          "default": "",
+          "description": "OpenAI API Key for AI suggestions"
+        },
+        "n8n.localServerPort": {
+          "type": "number",
+          "default": 3456,
+          "description": "Port for local execution server"
+        }
+      }
+    },
+    "languages": [
+      {
+        "id": "n8n-workflow",
+        "aliases": [
+          "n8n Workflow",
+          "n8n"
+        ],
+        "extensions": [
+          ".n8n.json"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./ && npm run compile-webview && npm run compile-server",
+    "compile-webview": "webpack --config ./webpack.webview.config.js",
+    "compile-server": "tsc -p ./src/server/tsconfig.json",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts,tsx",
+    "test": "jest",
+    "test:e2e": "playwright test",
+    "db:migrate": "node ./out/database/migrate.js",
+    "db:seed": "node ./out/database/seed.js"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.40.1",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.10.0",
+    "@types/pg": "^8.10.9",
+    "@types/react": "^18.2.45",
+    "@types/react-dom": "^18.2.18",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^6.15.0",
+    "@typescript-eslint/parser": "^6.15.0",
+    "css-loader": "^6.8.1",
+    "eslint": "^8.56.0",
+    "jest": "^29.7.0",
+    "style-loader": "^3.3.3",
+    "ts-jest": "^29.1.1",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.3.3",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4"
+  },
+  "dependencies": {
+    "@vscode/webview-ui-toolkit": "^1.4.0",
+    "axios": "^1.6.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.21.2",
+    "mongodb": "^6.3.0",
+    "openai": "^4.24.1",
+    "pg": "^8.11.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "recharts": "^2.10.0",
+    "socket.io": "^4.7.2",
+    "socket.io-client": "^4.7.2",
+    "tailwindcss": "^3.4.0",
+    "winston": "^3.11.0",
+    "zod": "^3.25.67"
+  }
+}

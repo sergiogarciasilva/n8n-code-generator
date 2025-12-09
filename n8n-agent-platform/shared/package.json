@@ -1,0 +1,14 @@
+{
+  "name": "@n8n-agent-platform/shared",
+  "version": "1.0.0",
+  "description": "Shared types and utilities for n8n agent platform",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}

@@ -1,0 +1,280 @@
+{
+  "meta": {
+    "instanceId": "workflow-generator-002"
+  },
+  "id": "chatbot-openai-basic",
+  "name": "OpenAI Chatbot Integration",
+  "description": "AI-powered chatbot using OpenAI GPT models with conversation memory and context awareness",
+  "version": "1.0.0",
+  "n8n_version": "v1.x.x",
+  "author": "n8n Agent Platform",
+  "created_date": "2025-06-27",
+  "category": "ai-ml",
+  "subcategory": "chatbots",
+  "tags": ["ai", "openai", "chatbot", "gpt", "conversation", "intermediate"],
+  "difficulty": "intermediate",
+  "execution_type": "webhook-triggered",
+  "resource_requirements": "medium-resource",
+  "security_level": "internal",
+  "estimated_execution_time": "3-8 seconds",
+  "dependencies": [
+    {
+      "type": "api_key",
+      "service": "OpenAI",
+      "required": true
+    }
+  ],
+  "webhook_config": {
+    "method": "POST",
+    "path": "/webhook/chat",
+    "authentication": "header"
+  },
+  "workflow": {
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "/webhook/chat",
+          "options": {
+            "allowedOrigins": "*"
+          }
+        },
+        "id": "chat-webhook",
+        "name": "Chat Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 1,
+        "position": [240, 300]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict"
+            },
+            "conditions": [
+              {
+                "id": "message-validation",
+                "leftValue": "={{ $json.message }}",
+                "rightValue": "",
+                "operator": {
+                  "type": "string",
+                  "operation": "exists"
+                }
+              }
+            ],
+            "combinator": "and"
+          }
+        },
+        "id": "validate-input",
+        "name": "Validate Input",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2,
+        "position": [460, 300]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Prepare conversation context\nconst input = $input.first().json;\n\n// Get conversation history (in real implementation, this would come from a database)\nconst conversationHistory = input.conversation_history || [];\n\n// Build messages array for OpenAI\nconst messages = [\n  {\n    role: 'system',\n    content: `You are a helpful AI assistant. You provide clear, accurate, and friendly responses. \n    Current context:\n    - User ID: ${input.user_id || 'anonymous'}\n    - Session: ${input.session_id || 'new'}\n    - Timestamp: ${new Date().toISOString()}`\n  }\n];\n\n// Add conversation history\nconversationHistory.forEach(msg => {\n  messages.push({\n    role: msg.role,\n    content: msg.content\n  });\n});\n\n// Add current user message\nmessages.push({\n  role: 'user',\n  content: input.message\n});\n\nreturn [{\n  json: {\n    ...input,\n    openai_messages: messages,\n    processed_at: new Date().toISOString()\n  }\n}];"
+        },
+        "id": "prepare-context",
+        "name": "Prepare Conversation Context",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [680, 280]
+      },
+      {
+        "parameters": {
+          "resource": "chat",
+          "operation": "complete",
+          "model": {
+            "__rl": true,
+            "value": "gpt-3.5-turbo",
+            "mode": "list"
+          },
+          "messages": {
+            "messageValues": "={{ $json.openai_messages }}"
+          },
+          "options": {
+            "temperature": 0.7,
+            "maxTokens": 500,
+            "topP": 1,
+            "frequencyPenalty": 0,
+            "presencePenalty": 0
+          }
+        },
+        "id": "openai-chat",
+        "name": "OpenAI Chat",
+        "type": "@n8n/n8n-nodes-langchain.openAi",
+        "typeVersion": 1,
+        "position": [900, 280]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Process OpenAI response and prepare final output\nconst input = $input.first().json;\nconst originalData = input;\n\n// Extract the AI response\nconst aiResponse = input.choices?.[0]?.message?.content || 'I apologize, but I encountered an error processing your request.';\n\n// Update conversation history\nconst updatedHistory = [...(originalData.conversation_history || [])];\n\n// Add user message to history\nupdatedHistory.push({\n  role: 'user',\n  content: originalData.message,\n  timestamp: originalData.processed_at\n});\n\n// Add AI response to history\nupdatedHistory.push({\n  role: 'assistant', \n  content: aiResponse,\n  timestamp: new Date().toISOString()\n});\n\n// Keep only last 10 messages to manage context length\nconst trimmedHistory = updatedHistory.slice(-10);\n\n// Prepare response\nconst response = {\n  response: aiResponse,\n  conversation_id: originalData.session_id || 'new',\n  user_id: originalData.user_id || 'anonymous',\n  timestamp: new Date().toISOString(),\n  conversation_history: trimmedHistory,\n  tokens_used: input.usage?.total_tokens || 0,\n  model_used: 'gpt-3.5-turbo'\n};\n\nreturn [{ json: response }];"
+        },
+        "id": "process-response",
+        "name": "Process AI Response",
+        "type": "n8n-nodes-base.code", 
+        "typeVersion": 2,
+        "position": [1120, 280]
+      },
+      {
+        "parameters": {
+          "respondWith": "json",
+          "responseCode": 200,
+          "responseBody": "={{ JSON.stringify($json, null, 2) }}"
+        },
+        "id": "success-response",
+        "name": "Chat Response",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1,
+        "position": [1340, 280]
+      },
+      {
+        "parameters": {
+          "respondWith": "json",
+          "responseCode": 400,
+          "responseBody": "{\n  \"error\": \"Invalid request\",\n  \"message\": \"Message field is required\",\n  \"timestamp\": \"{{ new Date().toISOString() }}\"\n}"
+        },
+        "id": "error-response",
+        "name": "Error Response",
+        "type": "n8n-nodes-base.respondToWebhook", 
+        "typeVersion": 1,
+        "position": [680, 420]
+      }
+    ],
+    "connections": {
+      "Chat Webhook": {
+        "main": [
+          [
+            {
+              "node": "Validate Input",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Validate Input": {
+        "main": [
+          [
+            {
+              "node": "Prepare Conversation Context",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Error Response",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Prepare Conversation Context": {
+        "main": [
+          [
+            {
+              "node": "OpenAI Chat",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "OpenAI Chat": {
+        "main": [
+          [
+            {
+              "node": "Process AI Response",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Process AI Response": {
+        "main": [
+          [
+            {
+              "node": "Chat Response",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "pinData": {}
+  },
+  "usage_examples": [
+    {
+      "title": "Simple Chat Message",
+      "description": "Basic conversation with the AI",
+      "payload": {
+        "message": "Hello, how can you help me today?",
+        "user_id": "user123",
+        "session_id": "session456"
+      }
+    },
+    {
+      "title": "Conversation with History", 
+      "description": "Continuing a conversation with context",
+      "payload": {
+        "message": "Can you summarize what we discussed?",
+        "user_id": "user123",
+        "session_id": "session456",
+        "conversation_history": [
+          {
+            "role": "user",
+            "content": "I need help with my project",
+            "timestamp": "2025-06-27T23:40:00Z"
+          },
+          {
+            "role": "assistant",
+            "content": "I'd be happy to help with your project. What kind of project are you working on?",
+            "timestamp": "2025-06-27T23:40:05Z"
+          }
+        ]
+      }
+    }
+  ],
+  "testing": {
+    "test_cases": [
+      {
+        "name": "valid_message",
+        "input": {
+          "message": "Hello AI",
+          "user_id": "test123"
+        },
+        "expected_fields": ["response", "conversation_id", "timestamp", "tokens_used"]
+      },
+      {
+        "name": "empty_message",
+        "input": {},
+        "expected_response": {
+          "error": "Invalid request"
+        }
+      }
+    ]
+  },
+  "configuration": {
+    "required_credentials": [
+      {
+        "name": "OpenAI API Key",
+        "type": "openai",
+        "description": "Required for accessing OpenAI GPT models"
+      }
+    ],
+    "environment_variables": [
+      {
+        "name": "OPENAI_API_KEY",
+        "description": "Your OpenAI API key",
+        "required": true
+      }
+    ]
+  }
+}

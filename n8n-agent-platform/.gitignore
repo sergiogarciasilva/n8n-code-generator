@@ -1,0 +1,69 @@
+# Dependencies
+node_modules/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+dist/
+dist-electron/
+*.app
+*.exe
+*.deb
+*.AppImage
+*.dmg
+*.pkg
+*.msi
+*.snap
+*.rpm
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+logs/
+*.log
+
+# Database
+*.sqlite
+*.sqlite3
+postgres_data/
+redis_data/
+
+# Generated files
+loading.html
+docker-compose.yml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# TypeScript
+*.tsbuildinfo
+
+# Launcher specific
+launcher-simple.js
+create-icons.js
+generate-png-icons.js

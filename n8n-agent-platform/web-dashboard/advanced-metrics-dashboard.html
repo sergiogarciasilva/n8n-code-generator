@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>n8n Agent Platform - Advanced Metrics Dashboard</title>
+    <link rel="stylesheet" href="styles/glassmorphism.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.44.0/dist/apexcharts.min.js"></script>
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="background-wrapper">
+        <div class="gradient-orb"></div>
+        <div class="gradient-orb"></div>
+        <div class="gradient-orb"></div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <h1 style="font-size: 1.5rem; font-weight: 600;">
+                    🚀 n8n Agent Platform
+                </h1>
+                <span style="color: var(--text-tertiary); font-size: 0.875rem;">
+                    Metrics & Analytics
+                </span>
+            </div>
+            <div class="flex gap-2">
+                <a href="enterprise-dashboard.html" class="nav-item">
+                    🏠 Dashboard
+                </a>
+                <a href="workflow-generator.html" class="nav-item">
+                    🤖 AI Generator
+                </a>
+                <a href="#" class="nav-item active">
+                    📊 Metrics
+                </a>
+                <a href="#" class="nav-item">
+                    ⚙️ Settings
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container" style="max-width: 1400px; margin: 0 auto; padding: 32px;">
+        <!-- Header Section -->
+        <div class="glass-container p-4 mb-4 fade-in">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 style="font-size: 2rem; font-weight: 600; margin-bottom: 8px;">
+                        📈 Advanced Analytics Dashboard
+                    </h2>
+                    <p style="color: var(--text-secondary);">
+                        Real-time metrics and trends for your AI-powered workflows
+                    </p>
+                </div>
+                <div class="flex gap-2">
+                    <button class="btn btn-glass" onclick="refreshMetrics()">
+                        🔄 Refresh
+                    </button>
+                    <button class="btn btn-primary" onclick="exportReport()">
+                        📥 Export Report
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Key Metrics Grid -->
+        <div class="grid grid-cols-4 gap-3 mb-4" style="grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+            <!-- Total Workflows -->
+            <div class="metric-card fade-in" style="animation-delay: 0.1s;">
+                <div class="metric-label">Total Workflows</div>
+                <div class="metric-value" id="totalWorkflows">2,847</div>
+                <div class="metric-change positive">
+                    ↑ 12.5% vs last month
+                </div>
+                <canvas id="sparklineWorkflows" style="margin-top: 20px; height: 60px;"></canvas>
+            </div>
+
+            <!-- AI Completions -->
+            <div class="metric-card fade-in" style="animation-delay: 0.2s;">
+                <div class="metric-label">AI Completions</div>
+                <div class="metric-value" id="aiCompletions">18.4K</div>
+                <div class="metric-change positive">
+                    ↑ 23.7% vs last month
+                </div>
+                <canvas id="sparklineAI" style="margin-top: 20px; height: 60px;"></canvas>
+            </div>
+
+            <!-- Success Rate -->
+            <div class="metric-card fade-in" style="animation-delay: 0.3s;">
+                <div class="metric-label">Success Rate</div>
+                <div class="metric-value" id="successRate">98.7%</div>
+                <div class="metric-change positive">
+                    ↑ 2.1% improvement
+                </div>
+                <div class="progress-ring" style="margin-top: 20px;">
+                    <svg width="120" height="120" style="display: block; margin: 0 auto;">
+                        <circle cx="60" cy="60" r="50" fill="none" stroke="var(--surface-hover)" stroke-width="8"/>
+                        <circle cx="60" cy="60" r="50" fill="none" stroke="url(#gradient)" stroke-width="8"
+                                stroke-dasharray="314" stroke-dashoffset="10" stroke-linecap="round"
+                                transform="rotate(-90 60 60)"/>
+                        <defs>
+                            <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:var(--accent-blue);stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:var(--accent-purple);stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- Active Users -->
+            <div class="metric-card fade-in" style="animation-delay: 0.4s;">
+                <div class="metric-label">Active Users</div>
+                <div class="metric-value" id="activeUsers">421</div>
+                <div class="metric-change negative">
+                    ↓ 5.2% vs last hour
+                </div>
+                <div id="userActivityHeatmap" style="margin-top: 20px; height: 60px;"></div>
+            </div>
+        </div>
+
+        <!-- Charts Row 1 -->
+        <div class="grid grid-cols-2 gap-3 mb-4">
+            <!-- Workflow Execution Trends -->
+            <div class="chart-container fade-in" style="animation-delay: 0.5s;">
+                <div class="chart-header">
+                    <h3 class="chart-title">📊 Workflow Execution Trends</h3>
+                    <div class="chart-filters">
+                        <button class="filter-chip active" onclick="updateTimeRange('7d')">7D</button>
+                        <button class="filter-chip" onclick="updateTimeRange('30d')">30D</button>
+                        <button class="filter-chip" onclick="updateTimeRange('90d')">90D</button>
+                    </div>
+                </div>
+                <canvas id="executionTrendsChart" style="height: 300px;"></canvas>
+            </div>
+
+            <!-- AI Model Usage -->
+            <div class="chart-container fade-in" style="animation-delay: 0.6s;">
+                <div class="chart-header">
+                    <h3 class="chart-title">🤖 AI Model Usage Distribution</h3>
+                    <div class="chart-filters">
+                        <button class="filter-chip active">Today</button>
+                        <button class="filter-chip">This Week</button>
+                    </div>
+                </div>
+                <div id="aiModelUsageChart" style="height: 300px;"></div>
+            </div>
+        </div>
+
+        <!-- Charts Row 2 -->
+        <div class="grid grid-cols-3 gap-3 mb-4">
+            <!-- Node Type Distribution -->
+            <div class="chart-container fade-in" style="animation-delay: 0.7s;">
+                <div class="chart-header">
+                    <h3 class="chart-title">🔧 Popular Node Types</h3>
+                </div>
+                <div id="nodeTypeChart" style="height: 280px;"></div>
+            </div>
+
+            <!-- Error Analysis -->
+            <div class="chart-container fade-in" style="animation-delay: 0.8s;">
+                <div class="chart-header">
+                    <h3 class="chart-title">⚠️ Error Analysis</h3>
+                </div>
+                <div id="errorAnalysisChart" style="height: 280px;"></div>
+            </div>
+
+            <!-- Performance Metrics -->
+            <div class="chart-container fade-in" style="animation-delay: 0.9s;">
+                <div class="chart-header">
+                    <h3 class="chart-title">⚡ Performance Metrics</h3>
+                </div>
+                <div style="padding: 20px;">
+                    <div class="performance-metric mb-3">
+                        <div class="flex justify-between mb-1">
+                            <span>Avg. Execution Time</span>
+                            <span style="color: var(--accent-green);">2.3s</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 75%; background: var(--accent-green);"></div>
+                        </div>
+                    </div>
+                    <div class="performance-metric mb-3">
+                        <div class="flex justify-between mb-1">
+                            <span>API Response Time</span>
+                            <span style="color: var(--accent-blue);">145ms</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 90%; background: var(--accent-blue);"></div>
+                        </div>
+                    </div>
+                    <div class="performance-metric mb-3">
+                        <div class="flex justify-between mb-1">
+                            <span>Memory Usage</span>
+                            <span style="color: var(--accent-yellow);">68%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 68%; background: var(--accent-yellow);"></div>
+                        </div>
+                    </div>
+                    <div class="performance-metric">
+                        <div class="flex justify-between mb-1">
+                            <span>CPU Utilization</span>
+                            <span style="color: var(--accent-orange);">42%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: 42%; background: var(--accent-orange);"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Real-time Activity Feed -->
+        <div class="glass-container p-4 fade-in" style="animation-delay: 1s;">
+            <div class="chart-header mb-3">
+                <h3 class="chart-title">🔄 Real-time Activity Feed</h3>
+                <span class="pulse" style="display: inline-block; width: 8px; height: 8px; background: var(--accent-green); border-radius: 50%;"></span>
+            </div>
+            <div id="activityFeed" style="max-height: 300px; overflow-y: auto;">
+                <!-- Activity items will be inserted here -->
+            </div>
+        </div>
+    </main>
+
+    <style>
+        /* Additional styles specific to this dashboard */
+        .container {
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: var(--surface-secondary);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        .activity-item {
+            padding: 16px;
+            border-bottom: 1px solid var(--border-glass);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: background 0.2s;
+        }
+
+        .activity-item:hover {
+            background: var(--surface-hover);
+        }
+
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .activity-content {
+            flex: 1;
+        }
+
+        .activity-title {
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .activity-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        .activity-time {
+            color: var(--text-tertiary);
+            font-size: 0.875rem;
+        }
+    </style>
+
+    <script>
+        // Initialize charts and metrics
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize all charts
+            initializeExecutionTrendsChart();
+            initializeAIModelUsageChart();
+            initializeNodeTypeChart();
+            initializeErrorAnalysisChart();
+            initializeSparklines();
+            initializeActivityFeed();
+            
+            // Start real-time updates
+            setInterval(updateRealTimeMetrics, 5000);
+            setInterval(addActivityItem, 3000);
+        });
+
+        // Execution Trends Chart
+        function initializeExecutionTrendsChart() {
+            const ctx = document.getElementById('executionTrendsChart').getContext('2d');
+            const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+            gradient.addColorStop(0, 'rgba(10, 132, 255, 0.3)');
+            gradient.addColorStop(1, 'rgba(10, 132, 255, 0)');
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'Successful',
+                        data: [842, 956, 1024, 1156, 1289, 987, 1102],
+                        borderColor: '#0A84FF',
+                        backgroundColor: gradient,
+                        tension: 0.4,
+                        fill: true
+                    }, {
+                        label: 'Failed',
+                        data: [12, 18, 15, 22, 19, 14, 16],
+                        borderColor: '#FF453A',
+                        backgroundColor: 'rgba(255, 69, 58, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: 'rgba(255, 255, 255, 0.72)',
+                                font: {
+                                    family: "'Gloria Hallelujah', sans-serif"
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.05)'
+                            },
+                            ticks: {
+                                color: 'rgba(255, 255, 255, 0.52)'
+                            }
+                        },
+                        y: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.05)'
+                            },
+                            ticks: {
+                                color: 'rgba(255, 255, 255, 0.52)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // AI Model Usage Chart
+        function initializeAIModelUsageChart() {
+            const options = {
+                series: [44, 32, 18, 6],
+                chart: {
+                    type: 'donut',
+                    height: 300,
+                    background: 'transparent'
+                },
+                labels: ['GPT-4', 'GPT-3.5', 'Claude', 'Custom Models'],
+                colors: ['#0A84FF', '#BF5AF2', '#32D74B', '#FFD60A'],
+                stroke: {
+                    show: false
+                },
+                plotOptions: {
+                    pie: {
+                        donut: {
+                            size: '75%',
+                            labels: {
+                                show: true,
+                                total: {
+                                    show: true,
+                                    label: 'Total Calls',
+                                    color: '#ffffff',
+                                    formatter: function() {
+                                        return '18.4K';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                dataLabels: {
+                    enabled: false
+                },
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        colors: 'rgba(255, 255, 255, 0.72)'
+                    },
+                    fontFamily: "'Gloria Hallelujah', sans-serif"
+                }
+            };
+
+            const chart = new ApexCharts(document.querySelector("#aiModelUsageChart"), options);
+            chart.render();
+        }
+
+        // Node Type Chart
+        function initializeNodeTypeChart() {
+            const options = {
+                series: [{
+                    data: [
+                        { x: 'HTTP Request', y: 2847 },
+                        { x: 'Code', y: 2156 },
+                        { x: 'OpenAI', y: 1893 },
+                        { x: 'Webhook', y: 1567 },
+                        { x: 'IF', y: 1234 },
+                        { x: 'Telegram', y: 987 }
+                    ]
+                }],
+                chart: {
+                    type: 'bar',
+                    height: 280,
+                    background: 'transparent',
+                    toolbar: {
+                        show: false
+                    }
+                },
+                plotOptions: {
+                    bar: {
+                        borderRadius: 8,
+                        horizontal: true,
+                        distributed: true
+                    }
+                },
+                colors: ['#0A84FF', '#BF5AF2', '#32D74B', '#FFD60A', '#FF9F0A', '#FF453A'],
+                dataLabels: {
+                    enabled: false
+                },
+                xaxis: {
+                    labels: {
+                        style: {
+                            colors: 'rgba(255, 255, 255, 0.52)'
+                        }
+                    }
+                },
+                yaxis: {
+                    labels: {
+                        style: {
+                            colors: 'rgba(255, 255, 255, 0.72)',
+                            fontFamily: "'Gloria Hallelujah', sans-serif"
+                        }
+                    }
+                },
+                grid: {
+                    borderColor: 'rgba(255, 255, 255, 0.05)'
+                }
+            };
+
+            const chart = new ApexCharts(document.querySelector("#nodeTypeChart"), options);
+            chart.render();
+        }
+
+        // Error Analysis Chart
+        function initializeErrorAnalysisChart() {
+            const options = {
+                series: [{
+                    name: 'Errors',
+                    data: [
+                        { x: 'Timeout', y: 34 },
+                        { x: 'Auth Failed', y: 28 },
+                        { x: 'Invalid Data', y: 22 },
+                        { x: 'Rate Limit', y: 18 },
+                        { x: 'Network', y: 12 }
+                    ]
+                }],
+                chart: {
+                    type: 'treemap',
+                    height: 280,
+                    background: 'transparent',
+                    toolbar: {
+                        show: false
+                    }
+                },
+                colors: ['#FF453A', '#FF6B6B', '#FF8787', '#FFA5A5', '#FFC3C3'],
+                dataLabels: {
+                    enabled: true,
+                    style: {
+                        fontSize: '12px',
+                        fontFamily: "'Gloria Hallelujah', sans-serif",
+                        colors: ['#ffffff']
+                    }
+                },
+                plotOptions: {
+                    treemap: {
+                        enableShades: false
+                    }
+                }
+            };
+
+            const chart = new ApexCharts(document.querySelector("#errorAnalysisChart"), options);
+            chart.render();
+        }
+
+        // Sparklines
+        function initializeSparklines() {
+            // Workflows sparkline
+            const workflowsCtx = document.getElementById('sparklineWorkflows').getContext('2d');
+            new Chart(workflowsCtx, {
+                type: 'line',
+                data: {
+                    labels: Array(30).fill(''),
+                    datasets: [{
+                        data: Array(30).fill(0).map(() => Math.random() * 100 + 50),
+                        borderColor: '#0A84FF',
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.4,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { display: false },
+                        y: { display: false }
+                    }
+                }
+            });
+
+            // AI completions sparkline
+            const aiCtx = document.getElementById('sparklineAI').getContext('2d');
+            new Chart(aiCtx, {
+                type: 'line',
+                data: {
+                    labels: Array(30).fill(''),
+                    datasets: [{
+                        data: Array(30).fill(0).map(() => Math.random() * 100 + 50),
+                        borderColor: '#BF5AF2',
+                        borderWidth: 2,
+                        fill: false,
+                        tension: 0.4,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { display: false },
+                        y: { display: false }
+                    }
+                }
+            });
+        }
+
+        // Activity Feed
+        function initializeActivityFeed() {
+            const activities = [
+                { icon: '🚀', color: '#0A84FF', title: 'New workflow created', subtitle: 'AI Customer Support Bot', time: 'Just now' },
+                { icon: '✅', color: '#32D74B', title: 'Workflow executed successfully', subtitle: 'Data Processing Pipeline', time: '2 min ago' },
+                { icon: '🤖', color: '#BF5AF2', title: 'AI model completion', subtitle: 'Generated 15 node suggestions', time: '5 min ago' },
+                { icon: '⚠️', color: '#FFD60A', title: 'Rate limit warning', subtitle: 'OpenAI API approaching limit', time: '8 min ago' }
+            ];
+
+            const feedContainer = document.getElementById('activityFeed');
+            activities.forEach(activity => {
+                feedContainer.innerHTML += createActivityItem(activity);
+            });
+        }
+
+        function createActivityItem(activity) {
+            return `
+                <div class="activity-item">
+                    <div class="activity-icon" style="background: ${activity.color}20;">
+                        ${activity.icon}
+                    </div>
+                    <div class="activity-content">
+                        <div class="activity-title">${activity.title}</div>
+                        <div class="activity-subtitle">${activity.subtitle}</div>
+                    </div>
+                    <div class="activity-time">${activity.time}</div>
+                </div>
+            `;
+        }
+
+        // Real-time updates
+        function updateRealTimeMetrics() {
+            // Simulate metric updates
+            document.getElementById('activeUsers').textContent = 
+                Math.floor(Math.random() * 50 + 400);
+            
+            // Update success rate
+            const newRate = (Math.random() * 2 + 97).toFixed(1);
+            document.getElementById('successRate').textContent = newRate + '%';
+        }
+
+        // Add new activity items
+        function addActivityItem() {
+            const activities = [
+                { icon: '🔄', color: '#0A84FF', title: 'Workflow sync completed', subtitle: 'Synchronized 12 workflows' },
+                { icon: '📊', color: '#32D74B', title: 'Analytics report generated', subtitle: 'Weekly performance summary' },
+                { icon: '🔧', color: '#FF9F0A', title: 'Node updated', subtitle: 'HTTP Request node v2.1' },
+                { icon: '👤', color: '#BF5AF2', title: 'New user registered', subtitle: 'Enterprise plan activated' }
+            ];
+
+            const randomActivity = activities[Math.floor(Math.random() * activities.length)];
+            randomActivity.time = 'Just now';
+
+            const feedContainer = document.getElementById('activityFeed');
+            const newItem = document.createElement('div');
+            newItem.innerHTML = createActivityItem(randomActivity);
+            feedContainer.insertBefore(newItem.firstElementChild, feedContainer.firstChild);
+
+            // Remove old items if too many
+            if (feedContainer.children.length > 10) {
+                feedContainer.removeChild(feedContainer.lastChild);
+            }
+        }
+
+        // Export report function
+        function exportReport() {
+            alert('📥 Generating comprehensive analytics report...');
+        }
+
+        // Refresh metrics
+        function refreshMetrics() {
+            location.reload();
+        }
+
+        // Update time range
+        function updateTimeRange(range) {
+            document.querySelectorAll('.filter-chip').forEach(chip => {
+                chip.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Update chart data based on range
+            console.log('Updating charts for time range:', range);
+        }
+    </script>
+</body>
+</html>

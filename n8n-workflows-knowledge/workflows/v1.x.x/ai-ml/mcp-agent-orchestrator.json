@@ -1,0 +1,552 @@
+{
+  "meta": {
+    "instanceId": "workflow-generator-004"
+  },
+  "id": "mcp-agent-orchestrator",
+  "name": "MCP Agent Orchestrator System",
+  "description": "Advanced Model Context Protocol (MCP) agent orchestration system with multi-model coordination, context management, and intelligent task distribution",
+  "version": "1.0.0",
+  "n8n_version": "v1.x.x",
+  "author": "n8n Agent Platform",
+  "created_date": "2025-06-27",
+  "category": "ai-ml",
+  "subcategory": "agent-system",
+  "tags": ["mcp", "agents", "orchestration", "ai", "multi-model", "context", "advanced"],
+  "difficulty": "advanced",
+  "execution_type": "webhook-triggered",
+  "resource_requirements": "high-resource",
+  "security_level": "internal",
+  "estimated_execution_time": "5-30 seconds",
+  "dependencies": [
+    {
+      "type": "api_key",
+      "service": "OpenAI",
+      "required": true
+    },
+    {
+      "type": "api_key",
+      "service": "Anthropic",
+      "required": false
+    },
+    {
+      "type": "database",
+      "service": "PostgreSQL",
+      "required": true
+    }
+  ],
+  "webhook_config": {
+    "method": "POST",
+    "path": "/webhook/mcp-orchestrator",
+    "authentication": "bearer_token"
+  },
+  "workflow": {
+    "nodes": [
+      {
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "/webhook/mcp-orchestrator",
+          "options": {
+            "authentication": "bearerToken"
+          }
+        },
+        "id": "mcp-webhook",
+        "name": "MCP Orchestrator Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 1,
+        "position": [240, 300]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Parse and validate MCP request\nconst mcpRequest = $input.first().json;\n\n// Validate required fields\nif (!mcpRequest.task_type || !mcpRequest.context) {\n  return [{\n    json: {\n      error: 'Invalid MCP request',\n      message: 'task_type and context are required',\n      status: 'validation_failed'\n    }\n  }];\n}\n\n// Parse MCP context protocol\nconst parsedRequest = {\n  session_id: mcpRequest.session_id || `mcp-${Date.now()}`,\n  task_type: mcpRequest.task_type,\n  context: mcpRequest.context,\n  priority: mcpRequest.priority || 'medium',\n  max_agents: mcpRequest.max_agents || 3,\n  timeout: mcpRequest.timeout || 300, // 5 minutes\n  model_preferences: mcpRequest.model_preferences || ['gpt-4', 'gpt-3.5-turbo'],\n  context_boundaries: {\n    max_history: mcpRequest.context_boundaries?.max_history || 10,\n    shared_memory: mcpRequest.context_boundaries?.shared_memory !== false,\n    isolation_level: mcpRequest.context_boundaries?.isolation_level || 'session'\n  },\n  agent_requirements: {\n    specialized_agents: mcpRequest.agent_requirements?.specialized_agents || [],\n    parallel_execution: mcpRequest.agent_requirements?.parallel_execution !== false,\n    coordination_strategy: mcpRequest.agent_requirements?.coordination_strategy || 'sequential'\n  },\n  timestamp: new Date().toISOString(),\n  status: 'parsed'\n};\n\n// Determine task complexity\nconst complexity = this.calculateTaskComplexity(parsedRequest);\nparsedRequest.estimated_complexity = complexity;\n\nreturn [{ json: parsedRequest }];\n\n// Helper function to calculate task complexity\nfunction calculateTaskComplexity(request) {\n  let score = 0;\n  \n  // Base complexity by task type\n  const taskComplexity = {\n    'simple_query': 1,\n    'data_analysis': 3,\n    'content_generation': 2,\n    'problem_solving': 4,\n    'multi_step_reasoning': 5,\n    'research_synthesis': 4,\n    'code_generation': 3,\n    'decision_making': 5\n  };\n  \n  score += taskComplexity[request.task_type] || 3;\n  \n  // Context complexity\n  if (request.context.length > 1000) score += 1;\n  if (request.context.length > 5000) score += 2;\n  \n  // Agent requirements\n  if (request.max_agents > 2) score += 1;\n  if (request.agent_requirements.specialized_agents.length > 0) score += 2;\n  \n  if (score <= 2) return 'simple';\n  if (score <= 4) return 'medium';\n  if (score <= 6) return 'complex';\n  return 'very_complex';\n}"
+        },
+        "id": "parse-mcp-request",
+        "name": "Parse MCP Request",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [460, 300]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict"
+            },
+            "conditions": [
+              {
+                "id": "valid-request",
+                "leftValue": "={{ $json.status }}",
+                "rightValue": "parsed",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "and"
+          }
+        },
+        "id": "validate-request",
+        "name": "Validate Request",
+        "type": "n8n-nodes-base.if",
+        "typeVersion": 2,
+        "position": [680, 300]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Agent selection and orchestration strategy\nconst mcpRequest = $input.first().json;\n\n// Define available agents with capabilities\nconst availableAgents = [\n  {\n    id: 'reasoning-agent',\n    name: 'Reasoning Agent',\n    capabilities: ['problem_solving', 'multi_step_reasoning', 'decision_making'],\n    model: 'gpt-4',\n    cost_per_request: 0.03,\n    avg_response_time: 8\n  },\n  {\n    id: 'analysis-agent',\n    name: 'Data Analysis Agent',\n    capabilities: ['data_analysis', 'research_synthesis', 'pattern_recognition'],\n    model: 'gpt-4',\n    cost_per_request: 0.025,\n    avg_response_time: 6\n  },\n  {\n    id: 'content-agent',\n    name: 'Content Generation Agent',\n    capabilities: ['content_generation', 'writing', 'summarization'],\n    model: 'gpt-3.5-turbo',\n    cost_per_request: 0.01,\n    avg_response_time: 4\n  },\n  {\n    id: 'code-agent',\n    name: 'Code Generation Agent',\n    capabilities: ['code_generation', 'debugging', 'optimization'],\n    model: 'gpt-4',\n    cost_per_request: 0.035,\n    avg_response_time: 10\n  },\n  {\n    id: 'query-agent',\n    name: 'Simple Query Agent',\n    capabilities: ['simple_query', 'qa', 'factual_lookup'],\n    model: 'gpt-3.5-turbo',\n    cost_per_request: 0.005,\n    avg_response_time: 3\n  }\n];\n\n// Select optimal agents based on task type and requirements\nfunction selectAgents(taskType, requirements, maxAgents) {\n  const suitableAgents = availableAgents.filter(agent => \n    agent.capabilities.includes(taskType) ||\n    requirements.specialized_agents.some(req => agent.capabilities.includes(req))\n  );\n  \n  // Sort by relevance and performance\n  const scoredAgents = suitableAgents.map(agent => ({\n    ...agent,\n    relevance_score: agent.capabilities.includes(taskType) ? 10 : 5,\n    efficiency_score: (10 - agent.avg_response_time/2) + (0.05 - agent.cost_per_request) * 100\n  }));\n  \n  scoredAgents.sort((a, b) => (b.relevance_score + b.efficiency_score) - (a.relevance_score + a.efficiency_score));\n  \n  return scoredAgents.slice(0, maxAgents);\n}\n\n// Determine orchestration strategy\nfunction determineStrategy(complexity, agentCount, requirements) {\n  if (complexity === 'simple' || agentCount === 1) {\n    return 'single_agent';\n  }\n  \n  if (requirements.coordination_strategy === 'parallel' && agentCount > 1) {\n    return 'parallel_execution';\n  }\n  \n  if (complexity === 'very_complex') {\n    return 'hierarchical_delegation';\n  }\n  \n  return 'sequential_collaboration';\n}\n\nconst selectedAgents = selectAgents(\n  mcpRequest.task_type,\n  mcpRequest.agent_requirements,\n  mcpRequest.max_agents\n);\n\nconst orchestrationPlan = {\n  session_id: mcpRequest.session_id,\n  strategy: determineStrategy(\n    mcpRequest.estimated_complexity,\n    selectedAgents.length,\n    mcpRequest.agent_requirements\n  ),\n  selected_agents: selectedAgents,\n  execution_order: selectedAgents.map((agent, index) => ({\n    step: index + 1,\n    agent_id: agent.id,\n    agent_name: agent.name,\n    estimated_time: agent.avg_response_time,\n    dependencies: index > 0 ? [selectedAgents[index - 1].id] : []\n  })),\n  context_distribution: {\n    shared_context: mcpRequest.context,\n    agent_specific_contexts: {},\n    context_boundaries: mcpRequest.context_boundaries\n  },\n  estimated_total_time: selectedAgents.reduce((sum, agent) => sum + agent.avg_response_time, 0),\n  estimated_total_cost: selectedAgents.reduce((sum, agent) => sum + agent.cost_per_request, 0),\n  original_request: mcpRequest\n};\n\nreturn [{ json: orchestrationPlan }];"
+        },
+        "id": "agent-orchestration",
+        "name": "Agent Orchestration Planning",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [900, 280]
+      },
+      {
+        "parameters": {
+          "conditions": {
+            "options": {
+              "caseSensitive": true,
+              "leftValue": "",
+              "typeValidation": "strict"
+            },
+            "conditions": [
+              {
+                "id": "single-agent",
+                "leftValue": "={{ $json.strategy }}",
+                "rightValue": "single_agent",
+                "operator": {
+                  "type": "string",
+                  "operation": "equals"
+                }
+              }
+            ],
+            "combinator": "or"
+          }
+        },
+        "id": "route-strategy",
+        "name": "Route Execution Strategy",
+        "type": "n8n-nodes-base.switch",
+        "typeVersion": 3,
+        "position": [1120, 280]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Execute single agent task\nconst plan = $input.first().json;\nconst agent = plan.selected_agents[0];\nconst originalRequest = plan.original_request;\n\n// Prepare context for the agent\nconst agentContext = {\n  session_id: plan.session_id,\n  agent_info: agent,\n  task_context: originalRequest.context,\n  task_type: originalRequest.task_type,\n  instructions: `You are the ${agent.name}. Your capabilities include: ${agent.capabilities.join(', ')}. \n\nTask: ${originalRequest.task_type}\nContext: ${originalRequest.context}\n\nProvide a comprehensive response that addresses the task requirements. Be thorough and accurate.`,\n  model: agent.model,\n  timestamp: new Date().toISOString()\n};\n\nreturn [{ json: agentContext }];"
+        },
+        "id": "single-agent-execution",
+        "name": "Single Agent Execution",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [1340, 200]
+      },
+      {
+        "parameters": {
+          "resource": "chat",
+          "operation": "complete",
+          "model": {
+            "__rl": true,
+            "value": "={{ $json.model }}",
+            "mode": "list"
+          },
+          "messages": {
+            "messageValues": [
+              {
+                "role": "system",
+                "content": "={{ $json.instructions }}"
+              },
+              {
+                "role": "user",
+                "content": "Please complete the assigned task with the provided context."
+              }
+            ]
+          },
+          "options": {
+            "temperature": 0.3,
+            "maxTokens": 2000
+          }
+        },
+        "id": "agent-ai-processing",
+        "name": "Agent AI Processing",
+        "type": "@n8n/n8n-nodes-langchain.openAi",
+        "typeVersion": 1,
+        "position": [1560, 200]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Multi-agent sequential execution\nconst plan = $input.first().json;\nconst originalRequest = plan.original_request;\n\n// Create execution context for first agent\nconst firstAgent = plan.selected_agents[0];\nconst executionContext = {\n  session_id: plan.session_id,\n  current_step: 1,\n  total_steps: plan.selected_agents.length,\n  current_agent: firstAgent,\n  execution_plan: plan.execution_order,\n  accumulated_results: [],\n  shared_context: plan.context_distribution.shared_context,\n  original_task: originalRequest.task_type,\n  instructions: `You are the ${firstAgent.name} in a multi-agent system. Your capabilities: ${firstAgent.capabilities.join(', ')}.\n\nOriginal task: ${originalRequest.task_type}\nContext: ${originalRequest.context}\n\nAs the first agent, provide your analysis and initial response. Your output will be passed to subsequent agents for further processing.`,\n  model: firstAgent.model\n};\n\nreturn [{ json: executionContext }];"
+        },
+        "id": "multi-agent-init",
+        "name": "Multi-Agent Sequential Init",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [1340, 360]
+      },
+      {
+        "parameters": {
+          "resource": "chat",
+          "operation": "complete",
+          "model": {
+            "__rl": true,
+            "value": "={{ $json.model }}",
+            "mode": "list"
+          },
+          "messages": {
+            "messageValues": [
+              {
+                "role": "system",
+                "content": "={{ $json.instructions }}"
+              },
+              {
+                "role": "user",
+                "content": "Execute your part of this multi-agent task."
+              }
+            ]
+          },
+          "options": {
+            "temperature": 0.3,
+            "maxTokens": 1500
+          }
+        },
+        "id": "first-agent-processing",
+        "name": "First Agent Processing",
+        "type": "@n8n/n8n-nodes-langchain.openAi",
+        "typeVersion": 1,
+        "position": [1560, 360]
+      },
+      {
+        "parameters": {
+          "jsCode": "// Process and format agent results\nconst aiResponse = $input.first().json;\nconst executionContext = $('Single Agent Execution').first()?.json || $('Multi-Agent Sequential Init').first()?.json;\n\nconst agentResult = aiResponse.choices?.[0]?.message?.content || 'No response generated';\n\n// Format the final response\nconst mcpResponse = {\n  session_id: executionContext.session_id,\n  status: 'completed',\n  result: {\n    agent_response: agentResult,\n    agent_info: executionContext.current_agent || executionContext.agent_info,\n    execution_time: new Date().toISOString(),\n    token_usage: aiResponse.usage || { total_tokens: 0 },\n    confidence_score: 0.85 // This would be calculated based on response quality\n  },\n  metadata: {\n    strategy_used: executionContext.current_step ? 'multi_agent_sequential' : 'single_agent',\n    total_steps: executionContext.total_steps || 1,\n    completed_steps: executionContext.current_step || 1,\n    processing_complete: true\n  },\n  next_actions: {\n    requires_followup: false,\n    suggested_actions: [],\n    context_updated: true\n  }\n};\n\n// Add quality metrics\nmcpResponse.quality_metrics = {\n  response_length: agentResult.length,\n  estimated_accuracy: 'high',\n  completeness_score: agentResult.length > 100 ? 'complete' : 'partial',\n  relevance_score: 'high' // This would be calculated using semantic analysis\n};\n\nreturn [{ json: mcpResponse }];"
+        },
+        "id": "format-mcp-response",
+        "name": "Format MCP Response",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [1780, 280]
+      },
+      {
+        "parameters": {
+          "operation": "insert",
+          "schema": {
+            "__rl": true,
+            "value": "public",
+            "mode": "list"
+          },
+          "table": {
+            "__rl": true,
+            "value": "mcp_sessions",
+            "mode": "list"
+          },
+          "columns": {
+            "columnValues": [
+              {
+                "column": "session_id",
+                "value": "={{ $json.session_id }}"
+              },
+              {
+                "column": "status",
+                "value": "={{ $json.status }}"
+              },
+              {
+                "column": "result_data",
+                "value": "={{ JSON.stringify($json.result) }}"
+              },
+              {
+                "column": "metadata",
+                "value": "={{ JSON.stringify($json.metadata) }}"
+              },
+              {
+                "column": "quality_metrics",
+                "value": "={{ JSON.stringify($json.quality_metrics) }}"
+              },
+              {
+                "column": "created_at",
+                "value": "={{ new Date().toISOString() }}"
+              }
+            ]
+          }
+        },
+        "id": "store-session-data",
+        "name": "Store Session Data",
+        "type": "n8n-nodes-base.postgres",
+        "typeVersion": 2,
+        "position": [2000, 280]
+      },
+      {
+        "parameters": {
+          "respondWith": "json",
+          "responseCode": 200,
+          "responseBody": "={{ JSON.stringify($json, null, 2) }}"
+        },
+        "id": "mcp-success-response",
+        "name": "MCP Success Response",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1,
+        "position": [2220, 280]
+      },
+      {
+        "parameters": {
+          "respondWith": "json",
+          "responseCode": 400,
+          "responseBody": "{\n  \"error\": \"Invalid MCP request\",\n  \"message\": \"{{ $json.message || 'Request validation failed' }}\",\n  \"status\": \"validation_error\",\n  \"timestamp\": \"{{ new Date().toISOString() }}\"\n}"
+        },
+        "id": "mcp-error-response",
+        "name": "MCP Error Response",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1,
+        "position": [900, 420]
+      }
+    ],
+    "connections": {
+      "MCP Orchestrator Webhook": {
+        "main": [
+          [
+            {
+              "node": "Parse MCP Request",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Parse MCP Request": {
+        "main": [
+          [
+            {
+              "node": "Validate Request",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Validate Request": {
+        "main": [
+          [
+            {
+              "node": "Agent Orchestration Planning",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "MCP Error Response",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Agent Orchestration Planning": {
+        "main": [
+          [
+            {
+              "node": "Route Execution Strategy",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Route Execution Strategy": {
+        "main": [
+          [
+            {
+              "node": "Single Agent Execution",
+              "type": "main",
+              "index": 0
+            }
+          ],
+          [
+            {
+              "node": "Multi-Agent Sequential Init",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Single Agent Execution": {
+        "main": [
+          [
+            {
+              "node": "Agent AI Processing",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Agent AI Processing": {
+        "main": [
+          [
+            {
+              "node": "Format MCP Response",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Multi-Agent Sequential Init": {
+        "main": [
+          [
+            {
+              "node": "First Agent Processing",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "First Agent Processing": {
+        "main": [
+          [
+            {
+              "node": "Format MCP Response",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Format MCP Response": {
+        "main": [
+          [
+            {
+              "node": "Store Session Data",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Store Session Data": {
+        "main": [
+          [
+            {
+              "node": "MCP Success Response",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "pinData": {}
+  },
+  "usage_examples": [
+    {
+      "title": "Simple Query Task",
+      "description": "Basic MCP request for simple information retrieval",
+      "payload": {
+        "task_type": "simple_query",
+        "context": "What are the main benefits of using microservices architecture?",
+        "priority": "medium",
+        "max_agents": 1
+      }
+    },
+    {
+      "title": "Complex Problem Solving",
+      "description": "Multi-agent task for complex reasoning and problem solving",
+      "payload": {
+        "task_type": "problem_solving",
+        "context": "Design a scalable e-commerce platform architecture that can handle 1M users with real-time inventory management and personalized recommendations",
+        "priority": "high",
+        "max_agents": 3,
+        "agent_requirements": {
+          "specialized_agents": ["system_design", "data_analysis", "recommendation_systems"],
+          "coordination_strategy": "sequential"
+        },
+        "context_boundaries": {
+          "max_history": 15,
+          "shared_memory": true
+        }
+      }
+    },
+    {
+      "title": "Data Analysis Task",
+      "description": "Specialized data analysis with multiple perspectives",
+      "payload": {
+        "task_type": "data_analysis",
+        "context": "Analyze the following sales data trends and provide insights: [sales_data_here]",
+        "priority": "medium",
+        "max_agents": 2,
+        "model_preferences": ["gpt-4"],
+        "agent_requirements": {
+          "parallel_execution": false
+        }
+      }
+    }
+  ],
+  "testing": {
+    "test_cases": [
+      {
+        "name": "simple_query_test",
+        "input": {
+          "task_type": "simple_query",
+          "context": "What is artificial intelligence?"
+        },
+        "expected_response": {
+          "status": "completed",
+          "result": {
+            "agent_response": "contains AI definition"
+          }
+        }
+      },
+      {
+        "name": "invalid_request_test",
+        "input": {
+          "invalid_field": "test"
+        },
+        "expected_response": {
+          "error": "Invalid MCP request"
+        }
+      }
+    ]
+  },
+  "configuration": {
+    "required_credentials": [
+      {
+        "name": "OpenAI API Key",
+        "type": "openai",
+        "description": "Required for AI agent processing"
+      },
+      {
+        "name": "PostgreSQL Database",
+        "type": "postgres",
+        "description": "Required for session storage and context management"
+      }
+    ],
+    "database_schema": {
+      "table": "mcp_sessions",
+      "columns": [
+        "session_id VARCHAR(255) PRIMARY KEY",
+        "status VARCHAR(50)",
+        "result_data JSONB",
+        "metadata JSONB",
+        "quality_metrics JSONB",
+        "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
+      ]
+    },
+    "environment_variables": [
+      {
+        "name": "OPENAI_API_KEY",
+        "description": "Your OpenAI API key",
+        "required": true
+      },
+      {
+        "name": "MCP_WEBHOOK_TOKEN",
+        "description": "Bearer token for webhook authentication",
+        "required": true
+      },
+      {
+        "name": "POSTGRES_CONNECTION_STRING",
+        "description": "PostgreSQL database connection string",
+        "required": true
+      }
+    ]
+  }
+}

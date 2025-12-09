@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  # PostgreSQL con pgvector
+  postgres:
+    image: pgvector/pgvector:pg15
+    container_name: n8n_code_gen_postgres
+    restart: unless-stopped
+    runtime: runc
+    environment:
+      POSTGRES_USER: n8n_agent_user
+      POSTGRES_PASSWORD: n8n_agent_secure_password_2024
+      POSTGRES_DB: n8n_agent_platform_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./n8n-agent-platform/docker/postgres-init:/docker-entrypoint-initdb.d
+    ports:
+      - "5433:5432"
+    networks:
+      - n8n_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U n8n_agent_user -d n8n_agent_platform_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis para caching
+  redis:
+    image: redis:7-alpine
+    container_name: n8n_code_gen_redis
+    restart: unless-stopped
+    runtime: runc
+    command: redis-server --requirepass n8n_agent_redis_password_2024
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6380:6379"
+    networks:
+      - n8n_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  n8n_network:
+    name: n8n_code_gen_network
+    driver: bridge
+
+volumes:
+  postgres_data:
+    name: n8n_code_gen_postgres_data
+  redis_data:
+    name: n8n_code_gen_redis_data

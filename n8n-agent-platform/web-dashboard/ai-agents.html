@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Agents - n8n Agent Platform</title>
+    <link rel="stylesheet" href="styles/glassmorphism.css">
+    <style>
+        /* Page-specific styles */
+        .agent-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+            gap: 24px;
+            margin-bottom: 30px;
+        }
+        
+        .agent-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .agent-icon {
+            font-size: 2.5rem;
+            margin-right: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 60px;
+            height: 60px;
+            background: var(--surface-secondary);
+            backdrop-filter: blur(8px);
+            border-radius: 16px;
+            border: 1px solid var(--border-glass);
+        }
+        
+        .agent-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            flex: 1;
+        }
+        
+        .agent-status {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            backdrop-filter: blur(8px);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .status-active {
+            background: rgba(50, 215, 75, 0.15);
+            color: var(--accent-green);
+            border: 1px solid rgba(50, 215, 75, 0.3);
+        }
+        
+        .status-inactive {
+            background: rgba(255, 69, 58, 0.15);
+            color: var(--accent-red);
+            border: 1px solid rgba(255, 69, 58, 0.3);
+        }
+        
+        .status-configuring {
+            background: rgba(255, 214, 10, 0.15);
+            color: var(--accent-yellow);
+            border: 1px solid rgba(255, 214, 10, 0.3);
+        }
+        
+        .agent-description {
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+            line-height: 1.6;
+        }
+        
+        .agent-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 16px;
+            background: var(--surface-secondary);
+            backdrop-filter: blur(8px);
+            border: 1px solid var(--border-glass);
+            border-radius: 12px;
+            transition: var(--transition-smooth);
+        }
+        
+        .stat-item:hover {
+            background: var(--surface-hover);
+            transform: translateY(-2px);
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--accent-blue);
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+        
+        .stat-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+        
+        .agent-actions {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .control-panel {
+            margin-bottom: 32px;
+        }
+        
+        .control-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+        
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background: currentColor;
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulse 2s infinite;
+        }
+        
+        .log-output {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(12px);
+            color: var(--text-primary);
+            padding: 20px;
+            border-radius: 12px;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            border: 1px solid var(--border-glass);
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+        }
+        
+        .log-output::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .log-output::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+        
+        .log-output::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="background-wrapper">
+        <div class="gradient-orb"></div>
+        <div class="gradient-orb"></div>
+        <div class="gradient-orb"></div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <a href="enterprise-dashboard.html" class="nav-item">
+                    ← Dashboard
+                </a>
+                <h1 style="font-size: 1.5rem; font-weight: 600;">
+                    🤖 AI Agents Management
+                </h1>
+            </div>
+            <div class="flex gap-2">
+                <a href="workflow-generator.html" class="nav-item">
+                    🤖 AI Generator
+                </a>
+                <a href="advanced-metrics-dashboard.html" class="nav-item">
+                    📊 Metrics
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container" style="max-width: 1400px; margin: 0 auto; padding: 32px;">
+        <!-- Header -->
+        <div class="glass-container p-4 mb-4 fade-in">
+            <div class="text-center">
+                <h2 style="font-size: 2.5rem; font-weight: 600; margin-bottom: 12px;">
+                    🤖 AI Agents Management
+                </h2>
+                <p style="color: var(--text-secondary); font-size: 1.25rem;">
+                    Multi-agent orchestration y gestión inteligente
+                </p>
+            </div>
+        </div>
+
+        <!-- Control Panel -->
+        <div class="control-panel">
+            <div class="glass-card fade-in" style="animation-delay: 0.1s;">
+                <h3 style="font-size: 1.5rem; font-weight: 500; margin-bottom: 20px;">
+                    🎛️ Panel de Control
+                </h3>
+                <div class="control-grid">
+                    <button class="btn btn-primary" onclick="startAllAgents()">
+                        🚀 Iniciar Todos
+                    </button>
+                    <button class="btn btn-glass" onclick="stopAllAgents()">
+                        ⏸️ Detener Todos
+                    </button>
+                    <button class="btn btn-glass" onclick="refreshAgents()">
+                        🔄 Actualizar
+                    </button>
+                    <button class="btn btn-glass" onclick="createNewAgent()">
+                        ➕ Nuevo Agente
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Agents Grid -->
+        <div class="agent-grid">
+            <!-- MCP Orchestrator -->
+            <div class="glass-card fade-in" style="animation-delay: 0.2s;">
+                <div class="agent-header">
+                    <div class="agent-icon">🧠</div>
+                    <div class="agent-title">MCP Orchestrator</div>
+                    <span class="agent-status status-active">
+                        <span class="pulse-dot"></span>
+                        Activo
+                    </span>
+                </div>
+                <div class="agent-description">
+                    Agente principal de orquestación que coordina todos los Model Context Protocol (MCP) agents y maneja la comunicación entre servicios.
+                </div>
+                <div class="agent-stats">
+                    <div class="stat-item">
+                        <div class="stat-value">47</div>
+                        <div class="stat-label">Tareas Completadas</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">3</div>
+                        <div class="stat-label">Agentes Conectados</div>
+                    </div>
+                </div>
+                <div class="agent-actions">
+                    <button class="btn btn-primary" onclick="viewAgent('mcp-orchestrator')">
+                        Ver Detalles
+                    </button>
+                    <button class="btn btn-glass" onclick="configureAgent('mcp-orchestrator')">
+                        Configurar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Telegram Bot Agent -->
+            <div class="glass-card fade-in" style="animation-delay: 0.3s;">
+                <div class="agent-header">
+                    <div class="agent-icon">💬</div>
+                    <div class="agent-title">Telegram Bot Agent</div>
+                    <span class="agent-status status-active">
+                        <span class="pulse-dot"></span>
+                        Activo
+                    </span>
+                </div>
+                <div class="agent-description">
+                    Agente especializado en interacciones de Telegram, procesamiento de mensajes y automatización de respuestas inteligentes.
+                </div>
+                <div class="agent-stats">
+                    <div class="stat-item">
+                        <div class="stat-value" style="color: var(--accent-purple);">156</div>
+                        <div class="stat-label">Mensajes Procesados</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" style="color: var(--accent-green);">12</div>
+                        <div class="stat-label">Chats Activos</div>
+                    </div>
+                </div>
+                <div class="agent-actions">
+                    <button class="btn btn-primary" onclick="viewAgent('telegram-bot')">
+                        Ver Detalles
+                    </button>
+                    <button class="btn btn-glass" onclick="configureAgent('telegram-bot')">
+                        Configurar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Analytics Agent -->
+            <div class="glass-card fade-in" style="animation-delay: 0.4s;">
+                <div class="agent-header">
+                    <div class="agent-icon">🔍</div>
+                    <div class="agent-title">Analytics Agent</div>
+                    <span class="agent-status status-configuring">
+                        <span class="pulse-dot"></span>
+                        Configurando
+                    </span>
+                </div>
+                <div class="agent-description">
+                    Agente de análisis predictivo que procesa métricas, detecta anomalías y genera insights automáticos para optimización.
+                </div>
+                <div class="agent-stats">
+                    <div class="stat-item">
+                        <div class="stat-value" style="color: var(--accent-yellow);">23</div>
+                        <div class="stat-label">Análisis Ejecutados</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" style="color: var(--accent-orange);">2</div>
+                        <div class="stat-label">Anomalías Detectadas</div>
+                    </div>
+                </div>
+                <div class="agent-actions">
+                    <button class="btn btn-primary" onclick="viewAgent('analytics')">
+                        Ver Detalles
+                    </button>
+                    <button class="btn btn-glass" onclick="configureAgent('analytics')">
+                        Configurar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Workflow Automation -->
+            <div class="glass-card fade-in" style="animation-delay: 0.5s;">
+                <div class="agent-header">
+                    <div class="agent-icon">🔧</div>
+                    <div class="agent-title">Workflow Automation</div>
+                    <span class="agent-status status-inactive">
+                        <span class="pulse-dot" style="animation: none; opacity: 0.5;"></span>
+                        Inactivo
+                    </span>
+                </div>
+                <div class="agent-description">
+                    Agente de automatización que ejecuta workflows complejos, integra servicios externos y maneja tareas programadas.
+                </div>
+                <div class="agent-stats">
+                    <div class="stat-item">
+                        <div class="stat-value" style="color: var(--text-tertiary);">0</div>
+                        <div class="stat-label">Workflows Activos</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" style="color: var(--accent-blue);">8</div>
+                        <div class="stat-label">Plantillas Disponibles</div>
+                    </div>
+                </div>
+                <div class="agent-actions">
+                    <button class="btn btn-primary" onclick="startAgent('workflow')">
+                        Iniciar
+                    </button>
+                    <button class="btn btn-glass" onclick="configureAgent('workflow')">
+                        Configurar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Logs Section -->
+        <div class="glass-container p-4 fade-in" style="animation-delay: 0.6s;">
+            <h3 style="font-size: 1.5rem; font-weight: 500; margin-bottom: 20px;">
+                📋 Logs de Agentes
+            </h3>
+            <div id="agent-logs" class="log-output">
+[23:28:15] MCP Orchestrator: Iniciando coordinación de agentes...
+[23:28:16] Telegram Bot: Conectado al API de Telegram exitosamente
+[23:28:17] Analytics Agent: Configurando modelos de ML...
+[23:28:18] MCP Orchestrator: 3 agentes registrados y sincronizados
+[23:28:20] Telegram Bot: Procesando mensaje entrante de @usuario
+[23:28:22] Analytics Agent: Analizando patrones de uso del último día
+            </div>
+            <div style="margin-top: 20px; display: flex; gap: 12px;">
+                <button class="btn btn-glass" onclick="refreshLogs()">
+                    🔄 Actualizar Logs
+                </button>
+                <button class="btn btn-glass" onclick="clearLogs()">
+                    🗑️ Limpiar Logs
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function startAllAgents() {
+            addLog('🚀 Iniciando todos los agentes...');
+            setTimeout(() => {
+                addLog('✅ MCP Orchestrator: Iniciado');
+                setTimeout(() => addLog('✅ Telegram Bot: Iniciado'), 500);
+                setTimeout(() => addLog('✅ Analytics Agent: Iniciado'), 1000);
+                setTimeout(() => addLog('✅ Workflow Automation: Iniciado'), 1500);
+            }, 1000);
+        }
+
+        function stopAllAgents() {
+            addLog('⏸️ Deteniendo todos los agentes...');
+            setTimeout(() => {
+                addLog('🛑 Todos los agentes detenidos');
+            }, 1500);
+        }
+
+        function refreshAgents() {
+            addLog('🔄 Actualizando estado de agentes...');
+            setTimeout(() => {
+                addLog('📊 Estado actualizado correctamente');
+            }, 800);
+        }
+
+        function createNewAgent() {
+            const agentName = prompt('Nombre del nuevo agente:');
+            if (agentName) {
+                addLog(`➕ Creando nuevo agente: ${agentName}`);
+                setTimeout(() => {
+                    addLog(`✅ Agente '${agentName}' creado exitosamente`);
+                }, 1200);
+            }
+        }
+
+        function viewAgent(agentId) {
+            addLog(`🔍 Abriendo detalles del agente: ${agentId}`);
+            // Show notification
+            showNotification(`Cargando detalles de ${agentId}...`);
+        }
+
+        function configureAgent(agentId) {
+            addLog(`⚙️ Abriendo configuración del agente: ${agentId}`);
+            showNotification(`Configuración de ${agentId} abierta`);
+        }
+
+        function startAgent(agentId) {
+            addLog(`🚀 Iniciando agente: ${agentId}`);
+            setTimeout(() => {
+                addLog(`✅ Agente ${agentId} iniciado correctamente`);
+            }, 1000);
+        }
+
+        function addLog(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logElement = document.getElementById('agent-logs');
+            logElement.textContent += `\n[${timestamp}] ${message}`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        function refreshLogs() {
+            addLog('🔄 Logs actualizados');
+        }
+
+        function clearLogs() {
+            document.getElementById('agent-logs').textContent = '[' + new Date().toLocaleTimeString() + '] Logs limpiados';
+        }
+
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                background: var(--surface-primary);
+                backdrop-filter: blur(12px);
+                border: 1px solid var(--border-glass);
+                border-radius: 12px;
+                padding: 16px 24px;
+                box-shadow: var(--shadow-glass);
+                animation: fadeIn 0.3s ease-out;
+                z-index: 1000;
+                color: var(--text-primary);
+                font-family: var(--font-rounded);
+            `;
+            notification.innerHTML = message;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
+        }
+
+        // Simulación de actividad
+        setInterval(() => {
+            const activities = [
+                'MCP Orchestrator: Sincronizando estado de agentes',
+                'Telegram Bot: Procesando mensaje entrante',
+                'Analytics Agent: Ejecutando análisis predictivo',
+                'Sistema: Verificando salud de servicios',
+                'MCP Orchestrator: Optimizando distribución de tareas',
+                'Telegram Bot: Nueva conexión establecida',
+                'Analytics Agent: Generando reporte de insights'
+            ];
+            const randomActivity = activities[Math.floor(Math.random() * activities.length)];
+            addLog(randomActivity);
+        }, 15000);
+    </script>
+</body>
+</html>

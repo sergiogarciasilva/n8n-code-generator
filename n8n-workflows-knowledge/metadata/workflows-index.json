@@ -1,0 +1,36 @@
+{
+  "index_version": "1.0.0",
+  "last_updated": "2025-06-27T23:45:00Z",
+  "total_workflows": 0,
+  "workflows": {},
+  "statistics": {
+    "by_version": {
+      "v0.191.x": 0,
+      "v0.206.x": 0,
+      "v1.x.x": 0
+    },
+    "by_category": {
+      "automation": 0,
+      "integration": 0,
+      "ai-ml": 0,
+      "data-processing": 0,
+      "communication": 0,
+      "monitoring": 0,
+      "enterprise": 0
+    },
+    "by_difficulty": {
+      "beginner": 0,
+      "intermediate": 0,
+      "advanced": 0,
+      "expert": 0
+    }
+  },
+  "featured_workflows": [],
+  "recently_added": [],
+  "most_used": [],
+  "search_index": {
+    "keywords": {},
+    "descriptions": {},
+    "node_types": {}
+  }
+}
